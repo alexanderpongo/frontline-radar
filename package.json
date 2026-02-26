@@ -1,0 +1,25 @@
+{
+  "name": "frontline-radar",
+  "version": "1.0.0",
+  "description": "Automated proximity analysis to Ukrainian front lines using DeepState data",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "cd client && npm install && npm run build",
+    "dev": "node server.js & cd client && npm run dev",
+    "postinstall": "cd client && npm install"
+  },
+  "keywords": ["ukraine", "frontline", "proximity", "deepstate"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@turf/turf": "^7.3.4",
+    "axios": "^1.13.5",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}
