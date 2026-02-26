@@ -37,7 +37,7 @@ async function getLatestGeoJson() {
     }
 }
 
-async function getHistoryGeoJson(hoursAgo = 24) {
+async function getHistoryGeoJson(hoursAgo = 168) {
     try {
         const historyListResponse = await axios.get('https://deepstatemap.live/api/history/public');
         const historyList = historyListResponse.data;
@@ -118,28 +118,28 @@ function findNearestDistance(point, geoJson) {
 
 // Determine which region the user is in
 function classifyRegion(lat, lng) {
-    // Russia (approximate bounding boxes for major Russian territories)
+    // Crimea (occupied): lat 44-46.2, lng 32.5-36.7
     const isCrimea = lat >= 44 && lat <= 46.2 && lng >= 32.5 && lng <= 36.7;
 
-    // Ukraine mainland (without occupied territories — rough bounding box)
+    // Occupied Donbas & South (rough bboxes for Luhansk, Donetsk occupied, Zaporizhzhia occ, Kherson occ)
+    const isOccupiedDonbas = lat >= 47.0 && lat <= 49.5 && lng >= 37.0 && lng <= 40.5;
+    const isOccupiedSouth = lat >= 46.0 && lat <= 48.0 && lng >= 33.0 && lng <= 37.5;
+
+    // Ukraine mainland bounding box (including occupied zones)
     const isUkraineBbox = lat >= 44.3 && lat <= 52.4 && lng >= 22 && lng <= 40.2;
 
     // Russia bounding boxes
     const isRussiaEurope = lat >= 41 && lat <= 82 && lng >= 37 && lng <= 60 && !isUkraineBbox;
     const isRussiaAsia = lat >= 41 && lat <= 82 && lng >= 60 && lng <= 190;
     const isKaliningrad = lat >= 54.3 && lat <= 55.3 && lng >= 19.6 && lng <= 22.9;
-    const isMoscowArea = lat >= 54 && lat <= 57 && lng >= 35 && lng <= 40;
-    const isStPetersburg = lat >= 59 && lat <= 61 && lng >= 29 && lng <= 31;
 
-    // Belarus (occupied ally)
-    const isBelarus = lat >= 51.2 && lat <= 56.2 && lng >= 23.2 && lng <= 32.8;
-
-    if (isCrimea || isKaliningrad || isMoscowArea || isStPetersburg || isRussiaEurope || isRussiaAsia) {
-        return 'russia';
+    // Occupied Ukrainian territory — shows Ukrainian message
+    if (isCrimea || isOccupiedDonbas || isOccupiedSouth) {
+        return 'occupied_ukraine';
     }
 
-    if (isBelarus) {
-        return 'belarus';
+    if (isKaliningrad || isRussiaEurope || isRussiaAsia) {
+        return 'russia';
     }
 
     if (isUkraineBbox) {
@@ -160,20 +160,20 @@ app.get('/api/proximity', async (req, res) => {
 
     const [latestGeoJson, historyGeoJson] = await Promise.all([
         getLatestGeoJson(),
-        getHistoryGeoJson(24)
+        getHistoryGeoJson(168) // 7 days
     ]);
 
     const currentDistance = findNearestDistance(userLatLng, latestGeoJson);
     const historyDistance = findNearestDistance(userLatLng, historyGeoJson);
 
-    let change = null;
+    let change7d = null;
     if (currentDistance !== null && historyDistance !== null) {
-        change = historyDistance - currentDistance; // positive means enemy got closer
+        change7d = historyDistance - currentDistance; // positive means enemy got closer
     }
 
     res.json({
         currentDistanceKm: currentDistance,
-        change24hKm: change,
+        change7dKm: change7d,
         region: region,
         timestamp: new Date().toISOString()
     });
