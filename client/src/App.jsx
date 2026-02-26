@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './index.css';
+import FrontlineMap from './FrontlineMap.jsx';
 
 /* ––– Inline SVG Icons ––– */
 const IconZap = () => (
@@ -341,15 +342,13 @@ function App() {
       {/* Donate + Map */}
       <div className="bottom-grid">
         <div className="map-container">
-          <iframe
-            className="map-frame"
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            title="Location Map"
-            src={`https://www.openstreetmap.org/export/embed.html?bbox=${location.lng - 0.15}%2C${location.lat - 0.15}%2C${location.lng + 0.15}%2C${location.lat + 0.15}&layer=mapnik&marker=${location.lat}%2C${location.lng}`}
+          <FrontlineMap
+            userLat={location.lat}
+            userLng={location.lng}
+            frontLat={data?.nearestFrontlinePoint?.lat}
+            frontLng={data?.nearestFrontlinePoint?.lng}
+            distanceKm={data?.currentDistanceKm}
           />
-          <div className="map-gradient" />
           <div className="map-tag">
             <div className="ping" />
             <span>Pos {location.lat.toFixed(4)}, {location.lng.toFixed(4)}</span>
@@ -465,15 +464,13 @@ function App() {
         {/* Bottom: Map + War Crimes */}
         <div className="bottom-grid">
           <div className="map-container">
-            <iframe
-              className="map-frame"
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              title="Location Map"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${location.lng - 0.15}%2C${location.lat - 0.15}%2C${location.lng + 0.15}%2C${location.lat + 0.15}&layer=mapnik&marker=${location.lat}%2C${location.lng}`}
+            <FrontlineMap
+              userLat={location.lat}
+              userLng={location.lng}
+              frontLat={data?.nearestFrontlinePoint?.lat}
+              frontLng={data?.nearestFrontlinePoint?.lng}
+              distanceKm={data?.currentDistanceKm}
             />
-            <div className="map-gradient" />
             <div className="map-tag">
               <div className="ping" />
               <span>Поз. {location.lat.toFixed(4)}, {location.lng.toFixed(4)}</span>
