@@ -75,8 +75,11 @@ function findNearestDistance(point, geoJson) {
         const fill = (feature.properties.fill || '').toLowerCase();
 
         // Only measure to genuinely Russian-occupied territory (#a52714)
-        // Exclude: #ff5252 (Transnistria/Tskhinvali), #bcaaa4/#bdbdbd (grey zones), #880e4f (border markers)
-        const isEnemy = fill === '#a52714';
+        // Exclude: #ff5252 (Transnistria/Tskhinvali), #880e4f (border markers)
+        // Include #bcaaa4 "unknown/contested" — these are DeepState's buffer zones
+        // drawn directly on the active contact line (between occupied & free Ukraine).
+        // They give the most accurate frontline distance.
+        const isEnemy = fill === '#a52714' || fill === '#bcaaa4';
 
         if (feature.geometry && isEnemy) {
             try {
