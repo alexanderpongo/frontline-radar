@@ -71,13 +71,16 @@ function findNearestDistance(point, geoJson) {
     const userPoint = turf.point([point.lng, point.lat]);
 
     geoJson.features.forEach(feature => {
-        // DeepState colors:
-        // #a52714: Occupied
-        // #ff5252: Occupied/Breakthrough
-        // #bdbdbd: Frontline/Grey zone
-        const isEnemy = feature.properties.fill === '#a52714' ||
-            feature.properties.fill === '#ff5252' ||
-            feature.properties.fill === '#bdbdbd';
+        const fill = (feature.properties.fill || '').toLowerCase();
+        const name = (feature.properties.name || '').toLowerCase();
+
+        // Only measure to genuinely Russian-occupied/frontline territory:
+        // #a52714 = officially marked as Occupied (Russian forces)
+        // Exclude:
+        //   #ff5252 = Transnistria, Tskhinvali (separate conflicts)
+        //   #bcaaa4 / #bdbdbd = unknown/grey zone (not confirmed occupation)
+        //   #880e4f = Crimea/ORDLO borders (handled by region classifier)
+        const isEnemy = fill === '#a52714';
 
         if (feature.geometry && isEnemy) {
             try {
