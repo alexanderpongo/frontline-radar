@@ -74,12 +74,18 @@ function findNearestDistance(point, geoJson) {
     geoJson.features.forEach(feature => {
         const fill = (feature.properties.fill || '').toLowerCase();
 
-        // Only measure to genuinely Russian-occupied territory (#a52714)
-        // Exclude: #ff5252 (Transnistria/Tskhinvali), #880e4f (border markers)
-        // Include #bcaaa4 "unknown/contested" — these are DeepState's buffer zones
-        // drawn directly on the active contact line (between occupied & free Ukraine).
-        // They give the most accurate frontline distance.
-        const isEnemy = fill === '#a52714' || fill === '#bcaaa4';
+        // DeepState color logic:
+        // #bcaaa4 = "Unknown/Contested" — drawn EXCLUSIVELY on the active contact line
+        //   between occupied and free Ukrainian territory. This is what we want.
+        //
+        // #a52714 = "Occupied" — one big polygon covering all occupied land.
+        //   Its perimeter includes BOTH the frontline AND the pre-2022 Russia border
+        //   (in Luhansk area: ~39-40°E). For users in northern/western Ukraine, turf
+        //   finds the Russia border segment as "nearest" — wrong. Excluded.
+        //
+        // #ff5252 = Transnistria, S.Ossetia — unrelated conflicts. Excluded.
+        // #880e4f = Crimea/ORDLO historical borders. Excluded.
+        const isEnemy = fill === '#bcaaa4';
 
         if (feature.geometry && isEnemy) {
             try {
