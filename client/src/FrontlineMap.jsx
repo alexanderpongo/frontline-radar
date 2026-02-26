@@ -2,38 +2,80 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Inject dark overrides for Leaflet controls (runs once)
+// ––– Dark CSS overrides for Leaflet (injected once) –––
 const DARK_CSS = `
+  .frontline-map .leaflet-container {
+    background: #060608 !important;
+    outline: none !important;
+    border: none !important;
+  }
+  .frontline-map .leaflet-control-zoom {
+    border: none !important;
+    margin: 14px !important;
+  }
   .frontline-map .leaflet-control-zoom a {
-    background: rgba(20,20,30,0.85) !important;
-    color: rgba(255,255,255,0.6) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    backdrop-filter: blur(6px);
-    transition: color 0.2s;
+    background: rgba(12,12,20,0.88) !important;
+    color: rgba(255,255,255,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    backdrop-filter: blur(8px) !important;
+    width: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    font-size: 14px !important;
+    transition: all 0.2s !important;
+    display: block !important;
+  }
+  .frontline-map .leaflet-control-zoom a:first-child {
+    border-radius: 8px 8px 0 0 !important;
+    border-bottom: none !important;
+  }
+  .frontline-map .leaflet-control-zoom a:last-child {
+    border-radius: 0 0 8px 8px !important;
   }
   .frontline-map .leaflet-control-zoom a:hover {
     color: #fff !important;
-    background: rgba(40,40,60,0.95) !important;
+    background: rgba(255,50,50,0.15) !important;
+    border-color: rgba(255,68,68,0.25) !important;
   }
   .frontline-map .leaflet-bar {
-    border: none !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.7) !important;
   }
   .frontline-map .leaflet-popup-content-wrapper {
-    background: rgba(15,15,25,0.95) !important;
+    background: rgba(8,8,16,0.97) !important;
     color: #fff !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 10px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
-    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,68,68,0.2) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,68,68,0.1) !important;
+    backdrop-filter: blur(16px) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
   }
-  .frontline-map .leaflet-popup-tip {
-    background: rgba(15,15,25,0.95) !important;
+  .frontline-map .leaflet-popup-tip-container {
+    display: none !important;
   }
   .frontline-map .leaflet-popup-close-button {
-    color: rgba(255,255,255,0.5) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 16px !important;
+    right: 8px !important;
+    top: 6px !important;
+  }
+  .frontline-map .leaflet-popup-close-button:hover {
+    color: rgba(255,68,68,0.8) !important;
+    background: none !important;
+  }
+  .frontline-map .leaflet-tile-pane {
+    filter: brightness(0.72) contrast(1.05) saturate(0.7) !important;
+  }
+  .frontline-map .leaflet-pane,
+  .frontline-map .leaflet-top,
+  .frontline-map .leaflet-bottom {
+    z-index: unset !important;
+  }
+  .frontline-map .leaflet-control-container .leaflet-top {
+    z-index: 600 !important;
   }
 `;
+
 if (typeof document !== 'undefined' && !document.getElementById('frontline-map-css')) {
     const style = document.createElement('style');
     style.id = 'frontline-map-css';
@@ -41,25 +83,40 @@ if (typeof document !== 'undefined' && !document.getElementById('frontline-map-c
     document.head.appendChild(style);
 }
 
-const userIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(74,222,128,0.15)" stroke="#4ade80" stroke-width="1.5"/><circle cx="12" cy="12" r="5" fill="#4ade80"/></svg>`;
-const frontIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="rgba(255,68,68,0.15)" stroke="#ff4444" stroke-width="1.5"/><line x1="7" y1="7" x2="17" y2="17" stroke="#ff4444" stroke-width="2.5" stroke-linecap="round"/><line x1="17" y1="7" x2="7" y2="17" stroke="#ff4444" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+// ––– SVG Marker Icons –––
+const userIconSvg = `
+  <div style="position:relative;width:32px;height:32px">
+    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(74,222,128,0.12);animation:frontPulse 2s ease-in-out infinite"></div>
+    <div style="position:absolute;inset:6px;border-radius:50%;border:1.5px solid rgba(74,222,128,0.5)"></div>
+    <div style="position:absolute;inset:11px;border-radius:50%;background:#4ade80;box-shadow:0 0 10px rgba(74,222,128,0.8)"></div>
+    <style>@keyframes frontPulse{0%,100%{transform:scale(1);opacity:0.3}50%{transform:scale(1.6);opacity:0}}</style>
+  </div>`;
 
-const makeIcon = (svg) => L.divIcon({
+const frontIconSvg = `
+  <div style="position:relative;width:32px;height:32px">
+    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(255,50,50,0.1);animation:frontPulse2 1.8s ease-in-out infinite"></div>
+    <div style="position:absolute;inset:4px;border-radius:50%;border:1.5px solid rgba(255,68,68,0.45)"></div>
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:8px;width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="3" stroke-linecap="round">
+      <line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/>
+    </svg>
+    <style>@keyframes frontPulse2{0%,100%{transform:scale(1);opacity:0.5}50%{transform:scale(1.5);opacity:0}}</style>
+  </div>`;
+
+const makeIcon = (svg, size = 32) => L.divIcon({
     html: svg,
     className: '',
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -14],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2) - 4],
 });
 
-function FrontlineMap({ userLat, userLng, frontLat, frontLng, distanceKm }) {
+function FrontlineMap({ userLat, userLng, frontLat, frontLng, distanceKm, directionLabel }) {
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
 
     useEffect(() => {
         if (!mapRef.current || mapInstanceRef.current) return;
 
-        // Initialize map with dark CartoDB tiles
         const map = L.map(mapRef.current, {
             zoomControl: true,
             scrollWheelZoom: false,
@@ -72,90 +129,108 @@ function FrontlineMap({ userLat, userLng, frontLat, frontLng, distanceKm }) {
         }).addTo(map);
 
         mapInstanceRef.current = map;
-
-        return () => {
-            map.remove();
-            mapInstanceRef.current = null;
-        };
+        return () => { map.remove(); mapInstanceRef.current = null; };
     }, []);
 
     useEffect(() => {
         const map = mapInstanceRef.current;
         if (!map || !userLat || !userLng) return;
 
-        // Clear previous markers/layers
         map.eachLayer(layer => {
             if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
         });
 
         const userLatLng = [userLat, userLng];
 
-        // User marker (green dot)
+        // User marker
         L.marker(userLatLng, { icon: makeIcon(userIconSvg) })
             .addTo(map)
-            .bindPopup('<b style="color:#4ade80">📍 Ваше місцезнаходження</b>')
-            .openPopup();
+            .bindPopup(`<span style="color:#4ade80;font-weight:700;letter-spacing:0.1em">◉ YOUR POSITION</span><br/><span style="color:rgba(255,255,255,0.4);font-size:10px">${userLat.toFixed(4)}°N ${userLng.toFixed(4)}°E</span>`);
 
         const bounds = [userLatLng];
 
         if (frontLat && frontLng) {
             const frontLatLng = [frontLat, frontLng];
 
-            // Frontline marker (red X)
+            // Frontline marker
             L.marker(frontLatLng, { icon: makeIcon(frontIconSvg) })
                 .addTo(map)
-                .bindPopup(`<b style="color:#ff4444">🎯 Найближча точка фронту</b><br/><span style="color:#aaa; font-size:0.85em">${distanceKm ? Math.round(distanceKm) + ' км від вас' : ''}</span>`);
+                .bindPopup(`<span style="color:#ff4444;font-weight:700;letter-spacing:0.1em">✕ FRONTLINE</span><br/><span style="color:rgba(255,255,255,0.4);font-size:10px">${distanceKm ? '~' + Math.round(distanceKm) + ' km away' : ''}</span>`);
 
-            // Dashed line between user and frontline
+            // Glow shadow line (wider, semi-transparent)
             L.polyline([userLatLng, frontLatLng], {
-                color: '#ff4444',
-                weight: 2,
-                dashArray: '8 6',
-                opacity: 0.8,
+                color: 'rgba(255,68,68,0.15)',
+                weight: 10,
+                lineCap: 'round',
             }).addTo(map);
 
-            // Midpoint label with distance
+            // Primary dashed red line
+            L.polyline([userLatLng, frontLatLng], {
+                color: '#ff4444',
+                weight: 1.5,
+                dashArray: '10 8',
+                opacity: 0.9,
+            }).addTo(map);
+
+            // Distance label at midpoint
             if (distanceKm) {
                 const midLat = (userLat + frontLat) / 2;
                 const midLng = (userLng + frontLng) / 2;
+                const label = directionLabel
+                    ? `${directionLabel} · ${Math.round(distanceKm)} км`
+                    : `${Math.round(distanceKm)} км`;
                 L.marker([midLat, midLng], {
                     icon: L.divIcon({
-                        html: `<div style="background:rgba(0,0,0,0.75);color:#ff4444;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;border:1px solid rgba(255,68,68,0.4);white-space:nowrap;font-family:monospace;">${Math.round(distanceKm)} км</div>`,
+                        html: `<div style="
+              background: rgba(6,6,12,0.92);
+              color: #ff4444;
+              font-size: 10px;
+              font-weight: 700;
+              padding: 4px 10px;
+              border-radius: 100px;
+              border: 1px solid rgba(255,68,68,0.35);
+              white-space: nowrap;
+              font-family: 'JetBrains Mono', monospace;
+              letter-spacing: 0.1em;
+              box-shadow: 0 2px 16px rgba(0,0,0,0.6), 0 0 12px rgba(255,68,68,0.15);
+              backdrop-filter: blur(8px);
+            ">${label}</div>`,
                         className: '',
-                        iconAnchor: [30, 10],
+                        iconAnchor: [60, 12],
                     })
                 }).addTo(map);
             }
 
             bounds.push(frontLatLng);
-
-            // Fit view to show both points
-            map.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
+            map.fitBounds(L.latLngBounds(bounds), { padding: [50, 50] });
         } else {
-            // No frontline point — zoom to user
             map.setView(userLatLng, 7);
         }
-    }, [userLat, userLng, frontLat, frontLng, distanceKm]);
+    }, [userLat, userLng, frontLat, frontLng, distanceKm, directionLabel]);
 
     return (
-        <div className="frontline-map" style={{ position: 'relative', height: '100%', width: '100%', borderRadius: 'inherit', overflow: 'hidden' }}>
+        <div className="frontline-map" style={{
+            position: 'relative',
+            height: '100%',
+            width: '100%',
+            borderRadius: 'inherit',
+            overflow: 'hidden',
+        }}>
             <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
 
-            {/* Bottom gradient — matches old OSM embed style */}
+            {/* Bottom gradient matching old OSM style */}
             <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
-                height: '45%',
-                background: 'linear-gradient(to top, rgba(8,8,15,0.75) 0%, transparent 100%)',
-                pointerEvents: 'none',
-                zIndex: 500,
+                height: '50%',
+                background: 'linear-gradient(to top, rgba(3,3,5,0.8) 0%, transparent 100%)',
+                pointerEvents: 'none', zIndex: 500,
             }} />
-
-            {/* Top-left vignette */}
+            {/* Top gradient */}
             <div style={{
-                position: 'absolute', inset: 0,
-                background: 'radial-gradient(ellipse at 20% 80%, rgba(0,0,0,0.3) 0%, transparent 65%)',
-                pointerEvents: 'none',
-                zIndex: 500,
+                position: 'absolute', top: 0, left: 0, right: 0,
+                height: '20%',
+                background: 'linear-gradient(to bottom, rgba(3,3,5,0.4) 0%, transparent 100%)',
+                pointerEvents: 'none', zIndex: 500,
             }} />
         </div>
     );

@@ -102,6 +102,48 @@ function getUkraineThreatGrade(dist) {
   };
 }
 
+// ––– Compass bearing: user → nearest frontline point –––
+function getDirection(userLat, userLng, frontLat, frontLng) {
+  if (!frontLat || !frontLng) return null;
+
+  // Compute bearing
+  const φ1 = userLat * Math.PI / 180;
+  const φ2 = frontLat * Math.PI / 180;
+  const Δλ = (frontLng - userLng) * Math.PI / 180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  const θ = Math.atan2(y, x);
+  const bearing = ((θ * 180 / Math.PI) + 360) % 360;
+
+  // Compass label (Ukrainian)
+  const dirs = [
+    { max: 22.5, ua: 'Північ', en: 'N', symbol: '↑' },
+    { max: 67.5, ua: 'Сх.-Пн.', en: 'NE', symbol: '↗' },
+    { max: 112.5, ua: 'Схід', en: 'E', symbol: '→' },
+    { max: 157.5, ua: 'Сх.-Пд.', en: 'SE', symbol: '↘' },
+    { max: 202.5, ua: 'Південь', en: 'S', symbol: '↓' },
+    { max: 247.5, ua: 'Зх.-Пд.', en: 'SW', symbol: '↙' },
+    { max: 292.5, ua: 'Захід', en: 'W', symbol: '←' },
+    { max: 337.5, ua: 'Зх.-Пн.', en: 'NW', symbol: '↖' },
+    { max: 360, ua: 'Північ', en: 'N', symbol: '↑' },
+  ];
+  const dir = dirs.find(d => bearing < d.max);
+
+  // Named region hint based on frontline coordinates
+  let region = '—';
+  const fLat = frontLat, fLng = frontLng;
+  if (fLat > 50.0 && fLng < 37) region = 'Харківський напрям';
+  else if (fLat > 49.5 && fLng >= 37) region = 'Луганський напрям';
+  else if (fLat >= 48.5 && fLng >= 37) region = 'Донецький напрям';
+  else if (fLat >= 47.5 && fLng >= 36) region = 'Донецький напрям';
+  else if (fLat >= 47.0 && fLng >= 34 && fLng < 36.5) region = 'Запорізький напрям';
+  else if (fLat >= 46.0 && fLng >= 32 && fLng < 34.5) region = 'Херсонський напрям';
+  else if (fLat < 46.5 && fLng >= 33) region = 'Херсонський напрям';
+  else region = dir?.ua + ' напрям';
+
+  return { bearing: Math.round(bearing), symbol: dir?.symbol, en: dir?.en, region };
+}
+
 function App() {
   const [location, setLocation] = useState(null);
   const [data, setData] = useState(null);
@@ -308,6 +350,18 @@ function App() {
                 </span>
                 <span className="distance-unit">km</span>
               </div>
+              {/* Direction row */}
+              {data?.nearestFrontlinePoint && location && (() => {
+                const dir = getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng);
+                return dir ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem', fontFamily: "'JetBrains Mono',monospace", fontSize: '11px' }}>
+                    <span style={{ color: 'rgba(255,68,68,0.7)', fontSize: 16 }}>{dir.symbol}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em' }}>{dir.region}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+                    <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9 }}>{dir.bearing}°</span>
+                  </div>
+                ) : null;
+              })()}
               <p className="status-message">{status.msg}</p>
             </div>
             <div className="metrics-panel">
@@ -397,6 +451,18 @@ function App() {
                   </span>
                   <span className="distance-unit">км</span>
                 </div>
+                {/* Direction row */}
+                {data?.nearestFrontlinePoint && (() => {
+                  const dir = getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng);
+                  return dir ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem', fontFamily: "'JetBrains Mono',monospace", fontSize: '11px' }}>
+                      <span style={{ color: 'rgba(255,68,68,0.7)', fontSize: 16 }}>{dir.symbol}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em' }}>{dir.region}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.2)' }}>·</span>
+                      <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9 }}>{dir.bearing}°</span>
+                    </div>
+                  ) : null;
+                })()}
                 <p className="status-message">{grade.msg}</p>
                 {grade.advice && (
                   <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>
@@ -470,6 +536,7 @@ function App() {
               frontLat={data?.nearestFrontlinePoint?.lat}
               frontLng={data?.nearestFrontlinePoint?.lng}
               distanceKm={data?.currentDistanceKm}
+              directionLabel={data?.nearestFrontlinePoint ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng)?.region : null}
             />
             <div className="map-tag">
               <div className="ping" />
