@@ -9,10 +9,15 @@
     "dev": "node server.js & cd client && npm run dev",
     "postinstall": "cd client && npm install"
   },
-  "keywords": ["ukraine", "frontline", "proximity", "deepstate"],
+  "keywords": [
+    "ukraine",
+    "frontline",
+    "proximity",
+    "deepstate"
+  ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },

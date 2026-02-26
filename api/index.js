@@ -1,8 +1,12 @@
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');
-const turf = require('@turf/turf');
-const path = require('path');
+import express from 'express';
+import axios from 'axios';
+import cors from 'cors';
+import * as turf from '@turf/turf';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -175,5 +179,5 @@ app.get('/api/proximity', async (req, res) => {
     });
 });
 
-module.exports = app;
+export default app;
 
