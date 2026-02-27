@@ -1615,7 +1615,44 @@ body {
 }
 
 /* ––– Download button in story modal ––– */
+/* Primary: Share Now (Web Share API — mobile only) */
+.story-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 1.1rem 2rem;
+  background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+  box-shadow: 0 6px 30px rgba(131, 58, 180, 0.4);
+  margin-bottom: 0.5rem;
+}
+
+.story-share-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(131, 58, 180, 0.55);
+}
+
+.story-share-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary: Download PNG */
 .story-download-btn {
+
   display: flex;
   align-items: center;
   justify-content: center;

@@ -161,28 +161,67 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
   // Full direction name — no stripping
   const regionText = directionInfo?.region || '';
 
+  const canShare = typeof navigator !== 'undefined' && !!navigator.share && !!navigator.canShare;
 
+  // Generate PNG blob from the card element
+  const generateBlob = useCallback(async () => {
+    const { default: html2canvas } = await import('html2canvas');
+    const canvas = await html2canvas(cardRef.current, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: null,
+      logging: false,
+    });
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }, []);
+
+  // Download PNG
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false,
-      });
+      const blob = await generateBlob();
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = 'frontline-distance.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = url;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       console.error(e);
     } finally {
       setDownloading(false);
     }
-  }, []);
+  }, [generateBlob]);
+
+  // Share via Web Share API (mobile: opens native share sheet → Instagram Stories)
+  const [sharing, setSharing] = useState(false);
+  const handleShare = useCallback(async () => {
+    if (!cardRef.current) return;
+    setSharing(true);
+    try {
+      const blob = await generateBlob();
+      const file = new File([blob], 'frontline-distance.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Frontline Radar',
+        });
+      } else {
+        // Fallback: just download
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'frontline-distance.png';
+        link.href = url;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    } finally {
+      setSharing(false);
+    }
+  }, [generateBlob]);
 
   const cta = isUa
     ? ['Ця відстань може скоротитись.', 'Підтримайте Україну — зупиніть фронт.']
@@ -248,10 +287,24 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
           </div>
         </div>
 
+        {/* Share to Stories button (mobile only via Web Share API) */}
+        {canShare && (
+          <button
+            className="story-share-btn"
+            onClick={handleShare}
+            disabled={sharing || downloading}
+          >
+            <IconInstagram />
+            {sharing
+              ? (isUa ? 'Відкриття...' : 'Opening...')
+              : (isUa ? 'Поділитись зараз' : 'Share Now')}
+          </button>
+        )}
+
         <button
           className="story-download-btn"
           onClick={handleDownload}
-          disabled={downloading}
+          disabled={downloading || sharing}
         >
           <IconDownload />
           {downloading
@@ -259,9 +312,9 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
             : (isUa ? 'Завантажити PNG' : 'Download PNG')}
         </button>
         <p className="story-tip">
-          {isUa
-            ? '📲 Збережіть → Instagram → Stories → Галерея'
-            : '📲 Save → Instagram → Stories → Gallery'}
+          {canShare
+            ? (isUa ? '📲 «Поділитись зараз» → оберіть Instagram Stories' : '📲 Tap «Share Now» → choose Instagram Stories')
+            : (isUa ? '📲 Збережіть → Instagram → Stories → Галерея' : '📲 Save → Instagram → Stories → Gallery')}
         </p>
       </div>
     </div>
