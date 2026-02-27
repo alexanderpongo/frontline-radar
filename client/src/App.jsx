@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import './index.css';
 import FrontlineMap from './FrontlineMap.jsx';
 
@@ -59,6 +59,12 @@ const IconHome = () => (
 );
 const IconHomeBig = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ width: '220px', height: '220px' }}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+);
+const IconInstagram = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+);
+const IconDownload = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
 );
 
 // ––– Threat grades for Ukraine –––
@@ -144,11 +150,132 @@ function getDirection(userLat, userLng, frontLat, frontLng) {
   return { bearing: Math.round(bearing), symbol: dir?.symbol, en: dir?.en, region };
 }
 
+// ––– Instagram Story Card Generator –––
+function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
+  const cardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const distText = distanceKm ? `${Math.round(distanceKm).toLocaleString('uk-UA')} км` : '—';
+  const distTextEn = distanceKm ? `${Math.round(distanceKm).toLocaleString()} km` : '—';
+  const regionText = directionInfo?.region || '';
+
+  const handleDownload = useCallback(async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      // dynamic import so it doesn't bloat initial bundle
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      const link = document.createElement('a');
+      link.download = 'frontline-distance.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDownloading(false);
+    }
+  }, []);
+
+  // Choose language
+  const isUa = !isAbroad;
+  const headline = isUa
+    ? `${distText} від мене до лінії фронту`
+    : `${distTextEn} from me to the frontline`;
+  const subText = isUa
+    ? (regionText ? `Напрям: ${regionText}` : 'Дані: DeepStateUA')
+    : (regionText ? `Direction: ${regionText}` : 'Source: DeepStateUA');
+  const cta = isUa
+    ? ['Пам\'ятайте — ця відстань може зменшитись.', 'Підтримайте Україну, поки вона тримає лінію.']
+    : ['This distance might shrink.', 'Support Ukraine while it holds the line.'];
+  const siteLine = 'frontline-radar.vercel.app';
+
+  return (
+    <div className="story-overlay" onClick={onClose}>
+      <div className="story-modal" onClick={e => e.stopPropagation()}>
+        <button className="story-close" onClick={onClose}>✕</button>
+        <h3 className="story-modal-title">
+          {isUa ? 'Поділитись в Instagram Stories' : 'Share to Instagram Stories'}
+        </h3>
+        <p className="story-modal-hint">
+          {isUa
+            ? 'Завантажте картку і додайте в Stories'
+            : 'Download the card and add it to your Stories'}
+        </p>
+
+        {/* The card itself */}
+        <div className="story-card-wrap">
+          <div className="story-card" ref={cardRef}>
+            {/* Background gradient */}
+            <div className="story-bg" />
+
+            {/* Top badge */}
+            <div className="story-badge">FRONTLINE RADAR 🇺🇦</div>
+
+            {/* Main number block */}
+            <div className="story-center">
+              <div className="story-label-sm">
+                {isUa ? 'відстань до фронту від мене' : 'distance to the frontline from me'}
+              </div>
+              <div className="story-distance">{isUa ? distText : distTextEn}</div>
+              {regionText && (
+                <div className="story-region">
+                  <span className="story-arrow">{directionInfo?.symbol || '→'}</span>
+                  {regionText}
+                </div>
+              )}
+            </div>
+
+            {/* CTA lines */}
+            <div className="story-cta">
+              <div className="story-cta-line story-cta-1">{cta[0]}</div>
+              <div className="story-cta-line story-cta-2">{cta[1]}</div>
+            </div>
+
+            {/* Bottom */}
+            <div className="story-bottom">
+              <div className="story-site">{siteLine}</div>
+              <div className="story-source">Data: DeepStateUA</div>
+            </div>
+
+            {/* Decorative radar rings */}
+            <div className="story-ring story-ring-1" />
+            <div className="story-ring story-ring-2" />
+            <div className="story-ring story-ring-3" />
+          </div>
+        </div>
+
+        <button
+          className="story-download-btn"
+          onClick={handleDownload}
+          disabled={downloading}
+        >
+          <IconDownload />
+          {downloading
+            ? (isUa ? 'Генерація...' : 'Generating...')
+            : (isUa ? 'Завантажити PNG' : 'Download PNG')}
+        </button>
+        <p className="story-tip">
+          {isUa
+            ? '📲 Завантажте → відкрийте Instagram → Stories → додайте із галереї'
+            : '📲 Download → open Instagram → Stories → add from gallery'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [location, setLocation] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showStory, setShowStory] = useState(false);
 
   // TEST MODE: override region via URL param
   const getRegion = () => {
@@ -315,20 +442,22 @@ function App() {
   const renderAbroadDashboard = () => (
     <div className="dashboard animate-in" style={{ animationDelay: '0.1s' }}>
 
-      {/* Shield message */}
-      <div className="context-card donate-card" style={{ background: 'linear-gradient(135deg, rgba(30,80,160,0.3) 0%, rgba(10,40,100,0.2) 100%)', borderColor: 'rgba(100,160,255,0.25)' }}>
+      {/* Awareness message */}
+      <div className="context-card donate-card" style={{ background: 'linear-gradient(135deg, rgba(20,20,40,0.5) 0%, rgba(10,10,25,0.4) 100%)', borderColor: 'rgba(100,100,200,0.2)' }}>
         <div className="context-bg-icon"><IconShieldBig /></div>
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div className="context-card-header" style={{ marginBottom: '1rem' }}>
             <div className="context-icon donate"><IconShield /></div>
-            <h4 className="context-title donate">Ukraine Is Europe's Shield</h4>
+            <h4 className="context-title donate">War Doesn&apos;t Stay on the Map</h4>
           </div>
           <p className="context-text donate" style={{ marginBottom: '1.2rem', lineHeight: 1.75 }}>
-            For {data ? Math.round(data.currentDistanceKm) : '—'} km, Ukraine stands between you and the largest land war in Europe since 1945.
-            Ukrainian soldiers are holding a line that protects the entire continent's security and the principles of sovereignty that every democratic nation relies on.
+            In a world where borders connect us all, a conflict that seems far away rarely stays that way.
+            For {data ? Math.round(data.currentDistanceKm) : '—'} km, Ukrainian soldiers have held a line
+            that keeps millions of people in their homes — on every continent — without even knowing it.
           </p>
           <p className="context-text donate" style={{ color: 'rgba(180,210,255,0.8)', fontSize: '0.95rem', lineHeight: 1.7 }}>
-            If Ukraine were to lose ground further westward, the current front line would shift closer to your home. Every city that Ukraine defends is a city in Europe that does not have to prepare for war. The most meaningful thing you can do right now is support Ukraine's resilience.
+            Peace is not guaranteed by geography. It is maintained by people who choose to act.
+            The most meaningful thing anyone can do right now is to support Ukraine&apos;s resilience.
           </p>
         </div>
       </div>
@@ -422,9 +551,25 @@ function App() {
               <IconHeart />
               Donate via United24
             </a>
+            <button
+              className="context-btn share-story-btn"
+              onClick={() => setShowStory(true)}
+              style={{ marginTop: '0.75rem' }}
+            >
+              <IconInstagram />
+              Share to Instagram Stories
+            </button>
           </div>
         </div>
       </div>
+      {showStory && (
+        <ShareStoryCard
+          distanceKm={data?.currentDistanceKm}
+          directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng) : null}
+          isAbroad={true}
+          onClose={() => setShowStory(false)}
+        />
+      )}
     </div>
   );
 
@@ -545,6 +690,27 @@ function App() {
           </div>
           {renderWarCrimesCard()}
         </div>
+
+        {/* Share to Instagram */}
+        <div className="share-section">
+          <button
+            className="share-main-btn"
+            onClick={() => setShowStory(true)}
+          >
+            <IconInstagram />
+            Поділитись в Instagram Stories
+          </button>
+          <p className="share-hint">Розкажіть про відстань до фронту — про це важливо пам&apos;ятати</p>
+        </div>
+
+        {showStory && (
+          <ShareStoryCard
+            distanceKm={data?.currentDistanceKm}
+            directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng) : null}
+            isAbroad={false}
+            onClose={() => setShowStory(false)}
+          />
+        )}
       </div>
     );
   };

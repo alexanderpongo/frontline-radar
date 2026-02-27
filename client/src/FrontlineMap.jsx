@@ -179,6 +179,8 @@ function FrontlineMap({ userLat, userLng, frontLat, frontLng, distanceKm, direct
                 const label = directionLabel
                     ? `${directionLabel} · ${Math.round(distanceKm)} км`
                     : `${Math.round(distanceKm)} км`;
+                // Estimate width: ~7px per char + 20px padding
+                const estimatedW = label.length * 7 + 20;
                 L.marker([midLat, midLng], {
                     icon: L.divIcon({
                         html: `<div style="
@@ -194,9 +196,10 @@ function FrontlineMap({ userLat, userLng, frontLat, frontLng, distanceKm, direct
               letter-spacing: 0.1em;
               box-shadow: 0 2px 16px rgba(0,0,0,0.6), 0 0 12px rgba(255,68,68,0.15);
               backdrop-filter: blur(8px);
+              display: inline-block;
             ">${label}</div>`,
                         className: '',
-                        iconAnchor: [60, 12],
+                        iconAnchor: [estimatedW / 2, 12],
                     })
                 }).addTo(map);
             }
