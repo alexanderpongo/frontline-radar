@@ -82,8 +82,8 @@ function getUkraineThreatGrade(dist, lang = 'uk') {
       ? 'You are in an active combat zone. Follow official evacuation orders immediately. Stay in shelter!'
       : 'Ви знаходитесь у зоні активних бойових дій. Негайно дотримуйтесь офіційних оголошень про евакуацію. Перебувайте в укритті!',
     advice: isEn
-      ? 'Distance to occupied positions is under 30 km — direct risk zone.'
-      : 'Відстань до окупованих позицій менша за 30 км — зона прямого ризику.'
+      ? 'Distance to the frontline is under 30 km — direct risk zone.'
+      : 'Відстань до лінії фронту менша за 30 км — зона прямого ризику.'
   };
   if (dist < 100) return {
     cls: 'danger',
@@ -93,7 +93,7 @@ function getUkraineThreatGrade(dist, lang = 'uk') {
       : 'Ви знаходитесь у зоні потенційного артилерійського обстрілу. Рекомендуємо серйозно розглянути евакуацію та підготувати тривожну валізу.',
     advice: isEn
       ? 'Distance under 100 km — long-range artillery range.'
-      : 'Відстань до окупованих позицій менша за 100 км — зона дальнобійної артилерії.'
+      : 'Відстань до лінії фронту менша за 100 км — зона дальнобійної артилерії.'
   };
   if (dist < 200) return {
     cls: 'warning',
@@ -103,7 +103,7 @@ function getUkraineThreatGrade(dist, lang = 'uk') {
       : 'Ваш район у зоні моніторингу. Слідкуйте за офіційними каналами, знайте місце найближчого укриття та тримайте тривожну валізу напоготові.',
     advice: isEn
       ? 'Distance under 200 km — monitoring zone.'
-      : 'Відстань до окупованих позицій менша за 200 км — зона контролю.'
+      : 'Відстань до лінії фронту менша за 200 км — зона контролю.'
   };
   if (dist < 400) return {
     cls: 'warning',
@@ -113,7 +113,7 @@ function getUkraineThreatGrade(dist, lang = 'uk') {
       : 'Ви відносно далеко від лінії фронту, але ракетні удари можуть досягати вашого регіону. Знайте найближче укриття.',
     advice: isEn
       ? 'Distance under 400 km.'
-      : 'Відстань до окупованих позицій менша за 400 км.'
+      : 'Відстань до лінії фронту менша за 400 км.'
   };
   if (dist < 700) return {
     cls: 'safe',
@@ -122,16 +122,16 @@ function getUkraineThreatGrade(dist, lang = 'uk') {
       ? 'No direct combat threat now. Keep monitoring the situation.'
       : 'Прямої загрози бойових дій зараз немає. Продовжуйте стежити за ситуацією.',
     advice: isEn
-      ? 'Distance to occupied positions over 400 km.'
-      : 'Відстань до окупованих позицій понад 400 км.'
+      ? 'Distance to the frontline over 400 km.'
+      : 'Відстань до лінії фронту понад 400 км.'
   };
   return {
     cls: 'safe',
     label: isEn ? 'STABLE ZONE' : 'СТАБІЛЬНА ЗОНА',
     msg: isEn ? 'Safe distance from the front line.' : 'Безпечна відстань від лінії фронту.',
     advice: isEn
-      ? `~${Math.round(dist)} km from occupied positions.`
-      : `~${Math.round(dist)} км від окупованих позицій.`
+      ? `~${Math.round(dist)} km from the frontline.`
+      : `~${Math.round(dist)} км від лінії фронту.`
   };
 }
 
@@ -663,7 +663,7 @@ function App() {
             <div className="readout-main">
               <div className="readout-sys-label">
                 <span className={`pulse-dot ${loading ? 'yellow' : 'green'}`} />
-                {isEn ? 'Distance to Occupied Positions' : 'Відстань до окупованих позицій'}
+                {isEn ? 'Distance to the Frontline' : 'Відстань до лінії фронту'}
               </div>
               <div className={`status-label ${status.cls}`}>{status.label}</div>
               <div className="distance-display">
@@ -793,7 +793,7 @@ function App() {
               <div className="readout-main">
                 <div className="readout-sys-label">
                   <span className={`pulse-dot ${loading ? 'yellow' : 'green'}`} />
-                  {isEn ? 'Distance to Occupied Positions' : 'Відстань до окупованих позицій'}
+                  {isEn ? 'Distance to the Frontline' : 'Відстань до лінії фронту'}
                 </div>
                 <div className={`status-label ${grade.cls}`}>{grade.label}</div>
                 <div className="distance-display">
@@ -967,8 +967,8 @@ function App() {
           <h1>Front<br />Radar</h1>
           <p className="header-subtitle">
             {isEn
-              ? 'Automated proximity analysis to Russian-occupied territories based on DeepStateUA intelligence data.'
-              : 'Автоматизований аналіз відстані до окупованих Росією територій за даними розвідки DeepStateUA.'}
+              ? 'Automated proximity analysis to the frontline based on DeepStateUA intelligence data.'
+              : 'Автоматизований аналіз відстані до лінії фронту за даними розвідки DeepStateUA.'}
           </p>
         </header>
 
@@ -988,8 +988,8 @@ function App() {
 
               <h2>{isEn ? 'System Ready' : 'Система готова'}</h2>
               <p>{isEn
-                ? 'Allow location access to calculate your distance to Russian-occupied territory.'
-                : 'Надайте доступ до геопозиції для розрахунку відстані до окупованих Росією територій.'}</p>
+                ? 'Allow location access to calculate your distance to the frontline.'
+                : 'Надайте доступ до геопозиції для розрахунку відстані до лінії фронту.'}</p>
 
               <div className="cta-wrap">
                 <div className="cta-glow" />
