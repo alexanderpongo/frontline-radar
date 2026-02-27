@@ -867,8 +867,8 @@ function App() {
                 {isEn ? 'Official Evacuation Resources' : 'Офіційні ресурси евакуації'}
               </h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <a href="https://evakuacia.gov.ua" target="_blank" rel="noreferrer" className="context-btn russia" style={{ flex: 1, minWidth: 200, margin: 0 }}>
-                  {isEn ? 'evakuacia.gov.ua' : 'Евакуація.gov.ua'} <IconExternal />
+                <a href="https://bf.diia.gov.ua/articles/yak-znaity-informatsiiu-i-dopomohu-dlia-evakuatsii-u-vashomu-misti" target="_blank" rel="noreferrer" className="context-btn russia" style={{ flex: 1, minWidth: 200, margin: 0 }}>
+                  {isEn ? 'Evacuation Guide (Diia)' : 'Гід з евакуації (Дія)'} <IconExternal />
                 </a>
                 <a href="https://t.me/Evacuation2022_bot" target="_blank" rel="noreferrer" className="context-btn russia" style={{ flex: 1, minWidth: 200, margin: 0 }}>
                   <IconSend /> @Evacuation2022_bot
