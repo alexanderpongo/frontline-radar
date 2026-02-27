@@ -272,7 +272,7 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
       <div className="story-modal" onClick={e => e.stopPropagation()}>
         <button className="story-close" onClick={onClose}>✕</button>
         <h3 className="story-modal-title">
-          {isUa ? 'Поділитись в Instagram Stories' : 'Share to Instagram Stories'}
+          {isUa ? 'ПОДІЛИТИСЬ' : 'SHARE'}
         </h3>
         <p className="story-modal-hint">
           {isMobile
@@ -354,8 +354,8 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
             </button>
             <p className="story-tip">
               {isUa
-                ? '📲 Поділіться напряму або збережіть і додайте в Stories вручну'
-                : '📲 Share directly or save and add to Stories manually'}
+                ? 'Поділіться напряму або збережіть і додайте в Stories вручну'
+                : 'Share directly or save and add to Stories manually'}
             </p>
           </>
         ) : (
@@ -373,8 +373,8 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
             </button>
             <p className="story-tip">
               {isUa
-                ? '💾 Збережіть та опублікуйте в Instagram Stories вручну'
-                : '💾 Save and post to Instagram Stories manually'}
+                ? 'Збережіть та опублікуйте в Instagram Stories вручну'
+                : 'Save and post to Instagram Stories manually'}
             </p>
           </>
         )}
@@ -758,7 +758,7 @@ function App() {
               style={{ marginTop: '0.75rem' }}
             >
               <IconInstagram />
-              {isEn ? 'Share to Instagram Stories' : 'Поділитись в Instagram Stories'}
+              {isEn ? 'SHARE' : 'ПОДІЛИТИСЬ'}
             </button>
           </div>
         </div>
@@ -892,7 +892,7 @@ function App() {
             onClick={() => setShowStory(true)}
           >
             <IconInstagram />
-            {isEn ? 'Share to Instagram Stories' : 'Поділитись в Instagram Stories'}
+            {isEn ? 'SHARE' : 'ПОДІЛИТИСЬ'}
           </button>
           <p className="share-hint">{isEn ? 'Share your distance to the frontline — this matters' : 'Розкажіть про відстань до фронту — про це важливо пам\'ятати'}</p>
         </div>
