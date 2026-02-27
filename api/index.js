@@ -1,20 +1,27 @@
 import express from 'express';
 import axios from 'axios';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import * as turf from '@turf/turf';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
+// Security Headers
+app.use(helmet());
+
+// Rate Limiting: 100 requests per 15 minutes per IP
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+
+app.use('/api/', limiter);
 app.use(cors());
 app.use(express.json());
-
-// Serve static files logic removed as Vercel handles this via vercel.json
 
 let lastGeoJson = null;
 let lastUpdate = 0;
@@ -33,7 +40,7 @@ async function getLatestGeoJson() {
         return lastGeoJson;
     } catch (error) {
         console.error('Error fetching DeepState data:', error);
-        return lastGeoJson; // Return cached even if expired
+        return lastGeoJson;
     }
 }
 
@@ -41,10 +48,8 @@ async function getHistoryGeoJson(hoursAgo = 168) {
     try {
         const historyListResponse = await axios.get('https://deepstatemap.live/api/history/public');
         const historyList = historyListResponse.data;
-
         const targetTime = Date.now() - (hoursAgo * 60 * 60 * 1000);
 
-        // Find the closest history entry to targetTime
         let closest = historyList[0];
         let minDiff = Math.abs(new Date(closest.createdAt).getTime() - targetTime);
 
@@ -64,144 +69,115 @@ async function getHistoryGeoJson(hoursAgo = 168) {
     }
 }
 
-function findNearestDistance(point, geoJson) {
-    if (!geoJson || !geoJson.features) return { distance: null, nearestPoint: null };
+// Improved Logic from server.js
+function findNearestDistanceWithPoint(point, geoJson) {
+    if (!geoJson || !geoJson.features) return { distance: null, nearest: null };
 
     let minDistance = Infinity;
     let nearestCoord = null;
     const userPoint = turf.point([point.lng, point.lat]);
 
-    geoJson.features.forEach(feature => {
-        const fill = (feature.properties.fill || '').toLowerCase();
+    const FL_LAT_MIN = 44.0, FL_LAT_MAX = 51.5;
+    const FL_LNG_MIN = 22.0, FL_LNG_MAX = 39.2;
 
-        // DeepState color logic:
-        // #bcaaa4 = "Unknown/Contested" — drawn EXCLUSIVELY on the active contact line
-        //   between occupied and free Ukrainian territory. This is what we want.
-        //
-        // #a52714 = "Occupied" — one big polygon covering all occupied land.
-        //   Its perimeter includes BOTH the frontline AND the pre-2022 Russia border
-        //   (in Luhansk area: ~39-40°E). For users in northern/western Ukraine, turf
-        //   finds the Russia border segment as "nearest" — wrong. Excluded.
-        //
-        // #ff5252 = Transnistria, S.Ossetia — unrelated conflicts. Excluded.
-        // #880e4f = Crimea/ORDLO historical borders. Excluded.
-        const isEnemy = fill === '#bcaaa4';
-
-        if (feature.geometry && isEnemy) {
+    function processRingFrontlineOnly(ring) {
+        if (!ring || ring.length < 2) return;
+        for (let i = 0; i < ring.length - 1; i++) {
+            const a = ring[i];
+            const b = ring[i + 1];
+            const midLng = (a[0] + b[0]) / 2;
+            const midLat = (a[1] + b[1]) / 2;
+            if (midLat < FL_LAT_MIN || midLat > FL_LAT_MAX || midLng < FL_LNG_MIN || midLng > FL_LNG_MAX) continue;
             try {
-                let distance;
-                let candidateNearest;
-
-                if (feature.geometry.type === 'Polygon') {
-                    const line = turf.polygonToLine(feature);
-                    distance = turf.pointToLineDistance(userPoint, line);
-                    candidateNearest = turf.nearestPointOnLine(line, userPoint);
-                } else if (feature.geometry.type === 'MultiPolygon') {
-                    let minPolyDist = Infinity;
-                    feature.geometry.coordinates.forEach(coords => {
-                        const poly = turf.polygon(coords);
-                        const line = turf.polygonToLine(poly);
-                        const dist = turf.pointToLineDistance(userPoint, line);
-                        if (dist < minPolyDist) {
-                            minPolyDist = dist;
-                            candidateNearest = turf.nearestPointOnLine(line, userPoint);
-                        }
-                    });
-                    distance = minPolyDist;
-                } else {
-                    distance = turf.distance(userPoint, turf.nearestPoint(userPoint, feature));
-                    candidateNearest = turf.nearestPoint(userPoint, feature);
+                const seg = turf.lineString([a, b]);
+                const dist = turf.pointToLineDistance(userPoint, seg, { units: 'kilometers' });
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    const snapped = turf.nearestPointOnLine(seg, userPoint, { units: 'kilometers' });
+                    nearestCoord = snapped.geometry.coordinates;
                 }
-
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestCoord = candidateNearest?.geometry?.coordinates;
-                }
-            } catch (e) {
-                try {
-                    const nearest = turf.nearestPoint(userPoint, feature);
-                    const distance = turf.distance(userPoint, nearest);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestCoord = nearest?.geometry?.coordinates;
-                    }
-                } catch (e2) { }
-            }
+            } catch (_) { }
         }
+    }
+
+    geoJson.features.forEach(feature => {
+        const isEnemy = feature.properties.fill === '#ff5252' || feature.properties.fill === '#bdbdbd' || feature.properties.fill === '#bcaaa4';
+        if (!feature.geometry || !isEnemy) return;
+
+        try {
+            const c = turf.centroid(feature).geometry.coordinates;
+            const inUkraineBbox = c[1] >= 44.0 && c[1] <= 53.0 && c[0] >= 22.0 && c[0] <= 42.0;
+            if (!inUkraineBbox) return;
+        } catch (_) { return; }
+
+        try {
+            if (feature.geometry.type === 'Polygon') {
+                for (const ring of feature.geometry.coordinates) processRingFrontlineOnly(ring);
+            } else if (feature.geometry.type === 'MultiPolygon') {
+                for (const polygonCoords of feature.geometry.coordinates) {
+                    for (const ring of polygonCoords) processRingFrontlineOnly(ring);
+                }
+            }
+        } catch (e) { }
     });
 
     return {
         distance: minDistance === Infinity ? null : minDistance,
-        nearestPoint: nearestCoord ? { lat: nearestCoord[1], lng: nearestCoord[0] } : null
+        nearest: nearestCoord ? { lng: nearestCoord[0], lat: nearestCoord[1] } : null,
     };
 }
 
-// Determine which region the user is in
 function classifyRegion(lat, lng) {
-    // Crimea (occupied): lat 44-46.2, lng 32.5-36.7
     const isCrimea = lat >= 44 && lat <= 46.2 && lng >= 32.5 && lng <= 36.7;
-
-    // Occupied Donbas & South (rough bboxes for Luhansk, Donetsk occupied, Zaporizhzhia occ, Kherson occ)
     const isOccupiedDonbas = lat >= 47.0 && lat <= 49.5 && lng >= 37.0 && lng <= 40.5;
     const isOccupiedSouth = lat >= 46.0 && lat <= 48.0 && lng >= 33.0 && lng <= 37.5;
+    const isUkraineBbox = lat >= 44.3 && lat <= 52.4 && lng >= 22 && lng <= 41.0;
 
-    // Ukraine mainland bounding box (including occupied zones)
-    const isUkraineBbox = lat >= 44.3 && lat <= 52.4 && lng >= 22 && lng <= 40.2;
+    if (isCrimea || isOccupiedDonbas || isOccupiedSouth) return 'occupied_ukraine';
 
-    // Russia bounding boxes
     const isRussiaEurope = lat >= 41 && lat <= 82 && lng >= 37 && lng <= 60 && !isUkraineBbox;
     const isRussiaAsia = lat >= 41 && lat <= 82 && lng >= 60 && lng <= 190;
     const isKaliningrad = lat >= 54.3 && lat <= 55.3 && lng >= 19.6 && lng <= 22.9;
 
-    // Occupied Ukrainian territory — shows Ukrainian message
-    if (isCrimea || isOccupiedDonbas || isOccupiedSouth) {
-        return 'occupied_ukraine';
-    }
-
-    if (isKaliningrad || isRussiaEurope || isRussiaAsia) {
-        return 'russia';
-    }
-
-    if (isUkraineBbox) {
-        return 'ukraine';
-    }
-
+    if (isRussiaEurope || isRussiaAsia || isKaliningrad) return 'russia';
+    if (isUkraineBbox) return 'ukraine';
     return 'abroad';
 }
 
 app.get('/api/proximity', async (req, res) => {
-    const { lat, lng } = req.query;
-    if (!lat || !lng) {
-        return res.status(400).json({ error: 'Latitude and longitude are required' });
+    let { lat, lng } = req.query;
+    lat = parseFloat(lat);
+    lng = parseFloat(lng);
+
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return res.status(400).json({ error: 'Valid latitude and longitude are required' });
     }
 
-    const userLatLng = { lat: parseFloat(lat), lng: parseFloat(lng) };
-    const region = classifyRegion(userLatLng.lat, userLatLng.lng);
+    const userLatLng = { lat, lng };
+    const region = classifyRegion(lat, lng);
 
     const [latestGeoJson, historyGeoJson] = await Promise.all([
         getLatestGeoJson(),
-        getHistoryGeoJson(168) // 7 days
+        getHistoryGeoJson(168)
     ]);
 
-    const currentResult = findNearestDistance(userLatLng, latestGeoJson);
-    const historyResult = findNearestDistance(userLatLng, historyGeoJson);
+    const currentResult = findNearestDistanceWithPoint(userLatLng, latestGeoJson);
+    const historyResult = findNearestDistanceWithPoint(userLatLng, historyGeoJson);
 
-    const currentDistance = currentResult.distance;
-    const nearestPoint = currentResult.nearestPoint;
-
-    let change7d = null;
-    if (currentDistance !== null && historyResult.distance !== null) {
-        change7d = historyResult.distance - currentDistance; // positive means enemy got closer
+    let change = null;
+    if (currentResult.distance !== null && historyResult.distance !== null) {
+        change = historyResult.distance - currentResult.distance;
     }
 
     res.json({
-        currentDistanceKm: currentDistance,
-        nearestFrontlinePoint: nearestPoint,
-        change7dKm: change7d,
+        currentDistanceKm: currentResult.distance,
+        nearestFrontlinePoint: currentResult.nearest,
+        change7dKm: change,
         region: region,
         timestamp: new Date().toISOString()
     });
 });
 
 export default app;
+
 

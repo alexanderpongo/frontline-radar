@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './index.css';
 import FrontlineMap from './FrontlineMap.jsx';
 
@@ -68,49 +68,77 @@ const IconDownload = () => (
 );
 
 // ––– Threat grades for Ukraine –––
-function getUkraineThreatGrade(dist) {
-  if (!dist && dist !== 0) return { cls: 'safe', label: 'Очікування...', msg: 'Система готова до сканування.' };
+function getUkraineThreatGrade(dist, lang = 'uk') {
+  const isEn = lang === 'en';
+  if (!dist && dist !== 0) return {
+    cls: 'safe',
+    label: isEn ? 'Waiting...' : 'Очікування...',
+    msg: isEn ? 'System ready to scan.' : 'Система готова до сканування.'
+  };
   if (dist < 30) return {
     cls: 'critical',
-    label: '🚨 ТЕРМІНОВА ЕВАКУАЦІЯ',
-    msg: 'Ви знаходитесь у зоні активних бойових дій. Негайно дотримуйтесь офіційних оголошень про евакуацію. Перебувайте в укритті!',
-    advice: 'Відстань до окупованих позицій менша за 30 км — зона прямого ризику.'
+    label: isEn ? 'URGENT EVACUATION' : 'ТЕРМІНОВА ЕВАКУАЦІЯ',
+    msg: isEn
+      ? 'You are in an active combat zone. Follow official evacuation orders immediately. Stay in shelter!'
+      : 'Ви знаходитесь у зоні активних бойових дій. Негайно дотримуйтесь офіційних оголошень про евакуацію. Перебувайте в укритті!',
+    advice: isEn
+      ? 'Distance to occupied positions is under 30 km — direct risk zone.'
+      : 'Відстань до окупованих позицій менша за 30 км — зона прямого ризику.'
   };
   if (dist < 100) return {
     cls: 'danger',
-    label: '⚠️ ВИСОКА НЕБЕЗПЕКА',
-    msg: 'Ви знаходитесь у зоні потенційного артилерійського обстрілу. Рекомендуємо серйозно розглянути евакуацію та підготувати тривожну валізу.',
-    advice: 'Відстань до окупованих позицій менша за 100 км — зона дальнобійної артилерії.'
+    label: isEn ? 'HIGH DANGER' : 'ВИСОКА НЕБЕЗПЕКА',
+    msg: isEn
+      ? 'You are in a potential artillery range. Seriously consider evacuation and prepare your emergency kit.'
+      : 'Ви знаходитесь у зоні потенційного артилерійського обстрілу. Рекомендуємо серйозно розглянути евакуацію та підготувати тривожну валізу.',
+    advice: isEn
+      ? 'Distance under 100 km — long-range artillery range.'
+      : 'Відстань до окупованих позицій менша за 100 км — зона дальнобійної артилерії.'
   };
   if (dist < 200) return {
     cls: 'warning',
-    label: '🟡 ЗОНА ПІДВИЩЕНОЇ УВАГИ',
-    msg: 'Ваш район у зоні моніторингу. Слідкуйте за офіційними каналами, знайте місце найближчого укриття та тримайте тривожну валізу напоготові.',
-    advice: 'Відстань до окупованих позицій менша за 200 км — зона контролю.'
+    label: isEn ? 'ELEVATED AWARENESS' : 'ЗОНА ПІДВИЩЕНОЇ УВАГИ',
+    msg: isEn
+      ? 'Your area is under monitoring. Follow official channels, know your nearest shelter, and keep an emergency kit ready.'
+      : 'Ваш район у зоні моніторингу. Слідкуйте за офіційними каналами, знайте місце найближчого укриття та тримайте тривожну валізу напоготові.',
+    advice: isEn
+      ? 'Distance under 200 km — monitoring zone.'
+      : 'Відстань до окупованих позицій менша за 200 км — зона контролю.'
   };
   if (dist < 400) return {
     cls: 'warning',
-    label: '🟠 ПОТЕНЦІЙНА ЗАГРОЗА',
-    msg: 'Ви відносно далеко від лінії фронту, але ракетні удари можуть досягати вашого регіону. Знайте найближче укриття.',
-    advice: 'Відстань до окупованих позицій менша за 400 км.'
+    label: isEn ? 'POTENTIAL THREAT' : 'ПОТЕНЦІЙНА ЗАГРОЗА',
+    msg: isEn
+      ? 'You are relatively far from the front line, but missile strikes can reach your region. Know your nearest shelter.'
+      : 'Ви відносно далеко від лінії фронту, але ракетні удари можуть досягати вашого регіону. Знайте найближче укриття.',
+    advice: isEn
+      ? 'Distance under 400 km.'
+      : 'Відстань до окупованих позицій менша за 400 км.'
   };
   if (dist < 700) return {
     cls: 'safe',
-    label: '🟢 СТАБІЛЬНА ЗОНА',
-    msg: 'Прямої загрози бойових дій зараз немає. Продовжуйте стежити за ситуацією.',
-    advice: 'Відстань до окупованих позицій понад 400 км.'
+    label: isEn ? 'STABLE ZONE' : 'СТАБІЛЬНА ЗОНА',
+    msg: isEn
+      ? 'No direct combat threat now. Keep monitoring the situation.'
+      : 'Прямої загрози бойових дій зараз немає. Продовжуйте стежити за ситуацією.',
+    advice: isEn
+      ? 'Distance to occupied positions over 400 km.'
+      : 'Відстань до окупованих позицій понад 400 км.'
   };
   return {
     cls: 'safe',
-    label: '🟢 СТАБІЛЬНА ЗОНА',
-    msg: 'Безпечна відстань від лінії фронту.',
-    advice: `~${Math.round(dist)} км від окупованих позицій.`
+    label: isEn ? 'STABLE ZONE' : 'СТАБІЛЬНА ЗОНА',
+    msg: isEn ? 'Safe distance from the front line.' : 'Безпечна відстань від лінії фронту.',
+    advice: isEn
+      ? `~${Math.round(dist)} km from occupied positions.`
+      : `~${Math.round(dist)} км від окупованих позицій.`
   };
 }
 
 // ––– Compass bearing: user → nearest frontline point –––
-function getDirection(userLat, userLng, frontLat, frontLng) {
+function getDirection(userLat, userLng, frontLat, frontLng, lang = 'uk') {
   if (!frontLat || !frontLng) return null;
+  const isEn = lang === 'en';
 
   // Compute bearing
   const φ1 = userLat * Math.PI / 180;
@@ -121,33 +149,45 @@ function getDirection(userLat, userLng, frontLat, frontLng) {
   const θ = Math.atan2(y, x);
   const bearing = ((θ * 180 / Math.PI) + 360) % 360;
 
-  // Compass label (Ukrainian)
+  // Compass label
   const dirs = [
-    { max: 22.5, ua: 'Північ', en: 'N', symbol: '↑' },
+    { max: 22.5, ua: 'Північ', en: 'North', symbol: '↑' },
     { max: 67.5, ua: 'Сх.-Пн.', en: 'NE', symbol: '↗' },
-    { max: 112.5, ua: 'Схід', en: 'E', symbol: '→' },
+    { max: 112.5, ua: 'Схід', en: 'East', symbol: '→' },
     { max: 157.5, ua: 'Сх.-Пд.', en: 'SE', symbol: '↘' },
-    { max: 202.5, ua: 'Південь', en: 'S', symbol: '↓' },
+    { max: 202.5, ua: 'Південь', en: 'South', symbol: '↓' },
     { max: 247.5, ua: 'Зх.-Пд.', en: 'SW', symbol: '↙' },
-    { max: 292.5, ua: 'Захід', en: 'W', symbol: '←' },
+    { max: 292.5, ua: 'Захід', en: 'West', symbol: '←' },
     { max: 337.5, ua: 'Зх.-Пн.', en: 'NW', symbol: '↖' },
-    { max: 360, ua: 'Північ', en: 'N', symbol: '↑' },
+    { max: 360, ua: 'Північ', en: 'North', symbol: '↑' },
   ];
   const dir = dirs.find(d => bearing < d.max);
 
-  // Named region hint based on frontline coordinates
-  let region = '—';
+  // Named region hint
+  let region = '';
   const fLat = frontLat, fLng = frontLng;
-  if (fLat > 50.0 && fLng < 37) region = 'Харківський напрям';
-  else if (fLat > 49.5 && fLng >= 37) region = 'Луганський напрям';
-  else if (fLat >= 48.5 && fLng >= 37) region = 'Донецький напрям';
-  else if (fLat >= 47.5 && fLng >= 36) region = 'Донецький напрям';
-  else if (fLat >= 47.0 && fLng >= 34 && fLng < 36.5) region = 'Запорізький напрям';
-  else if (fLat >= 46.0 && fLng >= 32 && fLng < 34.5) region = 'Херсонський напрям';
-  else if (fLat < 46.5 && fLng >= 33) region = 'Херсонський напрям';
-  else region = dir?.ua + ' напрям';
+  const suffix = isEn ? 'direction' : 'напрям';
 
-  return { bearing: Math.round(bearing), symbol: dir?.symbol, en: dir?.en, region };
+  if (fLat > 50.0 && fLng < 37) region = isEn ? 'Kharkiv' : 'Харківський';
+  else if (fLat > 49.5 && fLng >= 37) region = isEn ? 'Luhansk' : 'Луганський';
+  else if (fLat >= 48.5 && fLng >= 37) region = isEn ? 'Donetsk' : 'Донецький';
+  else if (fLat >= 47.5 && fLng >= 36) region = isEn ? 'Donetsk' : 'Донецький';
+  else if (fLat >= 47.0 && fLng >= 34 && fLng < 36.5) region = isEn ? 'Zaporizhzhia' : 'Запорізький';
+  else if (fLat >= 46.0 && fLng >= 32 && fLng < 34.5) region = isEn ? 'Kherson' : 'Херсонський';
+  else if (fLat < 46.5 && fLng >= 33) region = isEn ? 'Kherson' : 'Херсонський';
+  else region = isEn ? dir?.en : dir?.ua;
+
+  return {
+    bearing: Math.round(bearing),
+    symbol: dir?.symbol,
+    label: isEn ? dir?.en : dir?.ua,
+    region: `${region} ${suffix}`
+  };
+}
+
+// ––– Detect mobile/touch device –––
+function isMobileDevice() {
+  return typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent);
 }
 
 // ––– Instagram Story Card Generator –––
@@ -158,10 +198,11 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
 
   const distNum = distanceKm ? Math.round(distanceKm).toLocaleString('uk-UA') : '—';
   const distNumEn = distanceKm ? Math.round(distanceKm).toLocaleString() : '—';
-  // Full direction name — no stripping
   const regionText = directionInfo?.region || '';
 
-  const canShare = typeof navigator !== 'undefined' && !!navigator.share && !!navigator.canShare;
+  const isMobile = isMobileDevice();
+  // canShare: only used on mobile (share sheet)
+  const canShare = isMobile && typeof navigator !== 'undefined' && !!navigator.share && !!navigator.canShare;
 
   // Generate PNG blob from the card element
   const generateBlob = useCallback(async () => {
@@ -175,7 +216,7 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
     return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
   }, []);
 
-  // Download PNG
+  // Save / Download PNG
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
     setDownloading(true);
@@ -183,7 +224,7 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
       const blob = await generateBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = 'frontline-distance.png';
+      link.download = 'frontradар-distance.png';
       link.href = url;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -194,24 +235,25 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
     }
   }, [generateBlob]);
 
-  // Share via Web Share API (mobile: opens native share sheet → Instagram Stories)
+  // Share via Web Share API (mobile: opens native share sheet)
   const [sharing, setSharing] = useState(false);
   const handleShare = useCallback(async () => {
     if (!cardRef.current) return;
     setSharing(true);
     try {
       const blob = await generateBlob();
-      const file = new File([blob], 'frontline-distance.png', { type: 'image/png' });
+      const file = new File([blob], 'frontradar-distance.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'Frontline Radar',
+          title: 'Frontradar',
+          text: isUa ? 'Відстань до лінії фронту' : 'My distance to the frontline',
         });
       } else {
-        // Fallback: just download
+        // Fallback: download
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = 'frontline-distance.png';
+        link.download = 'frontradar-distance.png';
         link.href = url;
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -221,12 +263,9 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
     } finally {
       setSharing(false);
     }
-  }, [generateBlob]);
+  }, [generateBlob, isUa]);
 
-  const cta = isUa
-    ? ['Ця відстань може скоротитись.', 'Підтримайте Україну — зупиніть фронт.']
-    : ['This distance could shrink.', 'Support Ukraine — stop the frontline.'];
-  const siteLine = 'frontline-radar.vercel.app';
+  const siteLine = 'frontradar.online';
 
   return (
     <div className="story-overlay" onClick={onClose}>
@@ -236,7 +275,9 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
           {isUa ? 'Поділитись в Instagram Stories' : 'Share to Instagram Stories'}
         </h3>
         <p className="story-modal-hint">
-          {isUa ? 'Завантажте картку і додайте в Stories' : 'Download the card and add it to your Stories'}
+          {isMobile
+            ? (isUa ? 'Поділіться або збережіть картку' : 'Share or save the card')
+            : (isUa ? 'Збережіть картку та опублікуйте в Stories' : 'Save the card and post it to Stories')}
         </p>
 
         {/* The card itself */}
@@ -245,16 +286,16 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
             <div className="story-bg" />
 
             {/* Top badge */}
-            <div className="story-badge">FRONTLINE RADAR 🇺🇦</div>
+            <div className="story-badge">FRONTRADAR.ONLINE 🇺🇦</div>
 
             {/* Main number block */}
             <div className="story-center">
               <div className="story-label-sm">
                 {isUa ? 'відстань до фронту від мене' : 'my distance to the frontline'}
               </div>
-              <div className="story-number-stack">
+              <div className="story-distance-row">
                 <span className="story-distance">{isUa ? distNum : distNumEn}</span>
-                <span className="story-unit-block">{isUa ? 'КМ' : 'KM'}</span>
+                <span className="story-unit">{isUa ? 'КМ' : 'KM'}</span>
               </div>
               {regionText && (
                 <div className="story-region">
@@ -274,7 +315,6 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
               </div>
             </div>
 
-
             {/* Bottom */}
             <div className="story-bottom">
               <div className="story-site">{siteLine}</div>
@@ -287,35 +327,57 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
           </div>
         </div>
 
-        {/* Share to Stories button (mobile only via Web Share API) */}
-        {canShare && (
-          <button
-            className="story-share-btn"
-            onClick={handleShare}
-            disabled={sharing || downloading}
-          >
-            <IconInstagram />
-            {sharing
-              ? (isUa ? 'Відкриття...' : 'Opening...')
-              : (isUa ? 'Поділитись зараз' : 'Share Now')}
-          </button>
+        {/* Mobile: SHARE TO SOCIALS + SAVE */}
+        {isMobile ? (
+          <>
+            {canShare && (
+              <button
+                className="story-share-btn"
+                onClick={handleShare}
+                disabled={sharing || downloading}
+              >
+                <IconInstagram />
+                {sharing
+                  ? (isUa ? 'Відкриття...' : 'Opening...')
+                  : (isUa ? 'Поділитись у соцмережах' : 'Share to Socials')}
+              </button>
+            )}
+            <button
+              className="story-download-btn"
+              onClick={handleDownload}
+              disabled={downloading || sharing}
+            >
+              <IconDownload />
+              {downloading
+                ? (isUa ? 'Збереження...' : 'Saving...')
+                : (isUa ? 'Зберегти' : 'Save')}
+            </button>
+            <p className="story-tip">
+              {isUa
+                ? '📲 Поділіться напряму або збережіть і додайте в Stories вручну'
+                : '📲 Share directly or save and add to Stories manually'}
+            </p>
+          </>
+        ) : (
+          /* Desktop: SAVE IMAGE only */
+          <>
+            <button
+              className="story-share-btn"
+              onClick={handleDownload}
+              disabled={downloading}
+            >
+              <IconDownload />
+              {downloading
+                ? (isUa ? 'Генерація...' : 'Generating...')
+                : (isUa ? 'Зберегти зображення' : 'Save Image')}
+            </button>
+            <p className="story-tip">
+              {isUa
+                ? '💾 Збережіть та опублікуйте в Instagram Stories вручну'
+                : '💾 Save and post to Instagram Stories manually'}
+            </p>
+          </>
         )}
-
-        <button
-          className="story-download-btn"
-          onClick={handleDownload}
-          disabled={downloading || sharing}
-        >
-          <IconDownload />
-          {downloading
-            ? (isUa ? 'Генерація...' : 'Generating...')
-            : (isUa ? 'Завантажити PNG' : 'Download PNG')}
-        </button>
-        <p className="story-tip">
-          {canShare
-            ? (isUa ? '📲 «Поділитись зараз» → оберіть Instagram Stories' : '📲 Tap «Share Now» → choose Instagram Stories')
-            : (isUa ? '📲 Збережіть → Instagram → Stories → Галерея' : '📲 Save → Instagram → Stories → Gallery')}
-        </p>
       </div>
     </div>
   );
@@ -327,23 +389,30 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showStory, setShowStory] = useState(false);
+  const isDevHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
   // lang: auto-detect on first render, then user can override
   const defaultLang = () => {
-    const params = new URLSearchParams(window.location.search);
-    const r = params.get('testRegion') || '';
-    return (r === 'abroad' || r === 'europe') ? 'en' : 'uk';
+    if (isDevHost) {
+      const params = new URLSearchParams(window.location.search);
+      const r = params.get('testRegion') || '';
+      if (r === 'abroad' || r === 'europe') return 'en';
+    }
+    return 'uk'; // Default to UA for prod unless user toggles
   };
   const [lang, setLang] = useState(defaultLang);
   const isEn = lang === 'en';
 
-  // TEST MODE: override region via URL param
+  // TEST MODE: override region via URL param (dev only)
   const getRegion = () => {
-    const params = new URLSearchParams(window.location.search);
-    const testRegion = params.get('testRegion');
-    if (testRegion && ['russia', 'occupied_ukraine', 'ukraine', 'abroad', 'europe'].includes(testRegion)) {
-      return testRegion;
+    if (isDevHost) {
+      const params = new URLSearchParams(window.location.search);
+      const testRegion = params.get('testRegion');
+      if (testRegion && ['russia', 'occupied_ukraine', 'ukraine', 'abroad', 'europe'].includes(testRegion)) {
+        return testRegion;
+      }
     }
-    return data?.region || 'ukraine'; // Default to ukraine for initial rendering
+    return data?.region || 'ukraine';
   };
   const region = getRegion();
   const isEnemy = region === 'russia';
@@ -362,13 +431,25 @@ function App() {
       const result = await response.json();
       setData(result);
       // Auto-set language based on server region if not yet manually changed
-      if (result.region === 'abroad' || result.region === 'europe') setLang(l => l);
+      // But don't overwrite if URL explicitly set a test region or language
     } catch (err) {
       setError(isEn ? 'Failed to fetch data from server.' : 'Не вдалося отримати дані від сервера.');
     } finally {
-      setTimeout(() => setLoading(false), 1200);
+      setTimeout(() => setLoading(false), 800);
     }
   };
+
+  // ––– TEST MODE: Auto-load coordinates from URL (dev only) –––
+  useEffect(() => {
+    if (!isDevHost) return;
+    const params = new URLSearchParams(window.location.search);
+    const lat = parseFloat(params.get('lat'));
+    const lng = parseFloat(params.get('lng'));
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setLocation({ lat, lng });
+      fetchProximity(lat, lng);
+    }
+  }, [isDevHost]);
 
   const handleGetLocation = () => {
     setError(null);
@@ -393,16 +474,36 @@ function App() {
 
   // ––– Status for abroad (European) users –––
   const getAbroadStatus = (dist) => {
-    if (!dist && dist !== 0) return { cls: 'safe', label: 'Waiting...', msg: 'System ready to scan.' };
-    if (dist < 200) return { cls: 'critical', label: 'Critical Proximity', msg: 'The front line is extremely close. Immediate attention required.' };
-    if (dist < 500) return { cls: 'danger', label: 'High Alert', msg: 'You are within range of the active conflict zone.' };
-    if (dist < 1200) return { cls: 'warning', label: 'Watch Zone', msg: 'Ukraine stands between you and the threat. Stay informed.' };
-    return { cls: 'safe', label: 'Monitored', msg: 'The distance is significant, but the conflict is ongoing.' };
+    if (!dist && dist !== 0) return {
+      cls: 'safe',
+      label: isEn ? 'Waiting...' : 'Очікування...',
+      msg: isEn ? 'System ready to scan.' : 'Система готова до сканування.'
+    };
+    if (dist < 200) return {
+      cls: 'critical',
+      label: isEn ? 'Critical Proximity' : 'Критична близькість',
+      msg: isEn ? 'The front line is extremely close. Immediate attention required.' : 'Лінія фронту надзвичайно близько. Необхідна підвищена увага.'
+    };
+    if (dist < 500) return {
+      cls: 'danger',
+      label: isEn ? 'High Alert' : 'Висока тривога',
+      msg: isEn ? 'You are within range of the active conflict zone.' : 'Ви знаходитесь у зоні досяжності активного конфлікту.'
+    };
+    if (dist < 1200) return {
+      cls: 'warning',
+      label: isEn ? 'Watch Zone' : 'Зона нагляду',
+      msg: isEn ? 'Ukraine stands between you and the threat. Stay informed.' : 'Україна стоїть між вами та загрозою. Будьте поінформовані.'
+    };
+    return {
+      cls: 'safe',
+      label: isEn ? 'Monitored' : 'Під наглядом',
+      msg: isEn ? 'The distance is significant, but the conflict is ongoing.' : 'Відстань значна, але конфлікт триває.'
+    };
   };
 
   const status = isAbroad
     ? getAbroadStatus(data?.currentDistanceKm)
-    : getUkraineThreatGrade(data?.currentDistanceKm);
+    : getUkraineThreatGrade(data?.currentDistanceKm, lang);
 
   const getDynamicsDisplay = () => {
     if (!data) return { text: '—', cls: 'muted' };
@@ -417,11 +518,32 @@ function App() {
   // ––– War Crimes Card –––
   const renderWarCrimesCard = () => {
     const texts = {
-      russia: { title: 'Цена километров', body: 'Каждый метр освобождённой земли пропитан доказательствами преступлений, которые не имеют срока давности. Мир должен видеть правду.', btn: 'Доказательства военных преступлений' },
-      abroad: { title: 'The Price of Every Kilometer', body: 'Every meter of liberated land is soaked with evidence of crimes that have no statute of limitations. The world must see the truth.', btn: 'Evidence of War Crimes' },
-      ukraine: { title: 'Ціна кілометрів', body: 'Кожен метр звільненої землі та кожен кілометр відстані просякнутий доказами злочинів, які не мають терміну давності. Світ повинен бачити правду.', btn: 'Докази воєнних злочинів' },
+      russia: {
+        title: 'Цена километров',
+        body: 'Каждый метр освобождённой земли пропитан доказательствами преступлений, которые не имеют срока давности. Мир должен видеть правду.',
+        btn: 'Доказательства военных преступлений'
+      },
+      abroad: {
+        title: 'The Price of Every Kilometer',
+        body: 'Every meter of liberated land is soaked with evidence of crimes that have no statute of limitations. The world must see the truth.',
+        btn: 'Evidence of War Crimes'
+      },
+      ukraine_uk: {
+        title: 'Ціна кілометрів',
+        body: 'Кожен метр звільненої землі та кожен кілометр відстані просякнутий доказами злочинів, які не мають терміну давності. Світ повинен бачити правду.',
+        btn: 'Докази воєнних злочинів'
+      },
+      ukraine_en: {
+        title: 'The Price of Kilometers',
+        body: 'Every meter of liberated land and every kilometer of distance is soaked with evidence of crimes that have no statute of limitations. The world must see the truth.',
+        btn: 'Evidence of War Crimes'
+      },
     };
-    const t = texts[isEnemy ? 'russia' : isAbroad ? 'abroad' : 'ukraine'];
+    let key;
+    if (isEnemy) key = 'russia';
+    else if (isAbroad) key = 'abroad';
+    else key = isEn ? 'ukraine_en' : 'ukraine_uk';
+    const t = texts[key];
     return (
       <div className="context-card warcrimes-card">
         <div className="context-bg-icon"><IconSkullBig /></div>
@@ -464,40 +586,47 @@ function App() {
   );
 
   // ––– Render: Occupied Ukrainian territory (Crimea, Donbas, etc.) –––
-  const renderOccupiedDashboard = () => (
-    <div className="dashboard animate-in" style={{ animationDelay: '0.1s' }}>
-      {/* You are Ukraine message */}
-      <div className="context-card" style={{ textAlign: 'center', padding: '4rem 3rem', background: 'linear-gradient(135deg, rgba(0,87,183,0.25) 0%, rgba(255,215,0,0.15) 100%)', borderColor: 'rgba(255,215,0,0.3)' }}>
-        <div className="context-bg-icon"><IconHomeBig /></div>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🇺🇦</div>
-          <h2 style={{ fontSize: '1.9rem', marginBottom: '1rem', color: '#FFD700', fontWeight: 800 }}>
-            Ви — частина України
-          </h2>
-          <p style={{ maxWidth: 520, margin: '0 auto 1.5rem', fontSize: '1.05rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7 }}>
-            Тимчасова окупація не змінює правду: ця земля — українська. Крим, Донбас, Херсонщина, Запоріжжя — кожне місто і кожне село повернеться додому. <strong>Ви не самотні.</strong>
-          </p>
-          <p style={{ maxWidth: 480, margin: '0 auto 2rem', fontSize: '0.95rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-            Якщо ви бачите рух техніки, розташування окупантів або будь-яку корисну інформацію — передайте її через офіційний бот Міністерства цифрової трансформації України:
-          </p>
-          <a
-            href="https://t.me/evorog_bot"
-            target="_blank"
-            rel="noreferrer"
-            className="context-btn donate"
-            style={{ maxWidth: 420, margin: '0 auto 1.5rem', background: 'linear-gradient(135deg, #0057b7 0%, #005bac 100%)', borderColor: 'rgba(0,87,183,0.5)' }}
-          >
-            <IconSend />
-            Відкрити @evorog_bot в Telegram
-          </a>
-          <p style={{ fontSize: '0.85rem', color: 'rgba(255,215,0,0.7)', marginTop: '1rem' }}>
-            Слава Україні! 🇺🇦 Ми повернемось.
-          </p>
+  const renderOccupiedDashboard = () => {
+    const isUa = lang === 'uk';
+    return (
+      <div className="dashboard animate-in" style={{ animationDelay: '0.1s' }}>
+        {/* You are Ukraine message */}
+        <div className="context-card" style={{ textAlign: 'center', padding: '4rem 3rem', background: 'linear-gradient(135deg, rgba(0,87,183,0.25) 0%, rgba(255,215,0,0.15) 100%)', borderColor: 'rgba(255,215,0,0.3)' }}>
+          <div className="context-bg-icon"><IconHomeBig /></div>
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '1rem', textShadow: '0 0 40px rgba(255,215,0,0.3)' }}>🇺🇦</div>
+            <h2 style={{ fontSize: '1.9rem', marginBottom: '1rem', color: '#FFD700', fontWeight: 800 }}>
+              {isUa ? 'Ви — частина України' : 'You are part of Ukraine'}
+            </h2>
+            <p style={{ maxWidth: 520, margin: '0 auto 1.5rem', fontSize: '1.05rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7 }}>
+              {isUa
+                ? 'Тимчасова окупація не змінює правду: ця земля — українська. Крим, Донбас, Херсонщина, Запоріжжя — кожне місто і кожне село повернеться додому. Ви не самотні.'
+                : 'Temporary occupation does not change the truth: this land is Ukrainian. Crimea, Donbas, Kherson, Zaporizhzhia — every city and every village will return home. You are not alone.'}
+            </p>
+            <p style={{ maxWidth: 480, margin: '0 auto 2rem', fontSize: '0.95rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+              {isUa
+                ? 'Якщо ви бачите рух техніки, розташування окупантів або будь-яку корисну інформацію — передайте її через офіційний бот Міністерства цифрової трансформації України:'
+                : 'If you see the movement of equipment, the location of the occupiers or any useful information — report it via the official bot of the Ministry of Digital Transformation of Ukraine:'}
+            </p>
+            <a
+              href="https://t.me/evorog_bot"
+              target="_blank"
+              rel="noreferrer"
+              className="context-btn donate"
+              style={{ maxWidth: 420, margin: '0 auto 1.5rem', background: 'linear-gradient(135deg, #0057b7 0%, #005bac 100%)', borderColor: 'rgba(0,87,183,0.5)' }}
+            >
+              <IconSend />
+              {isUa ? 'Відкрити @evorog_bot в Telegram' : 'Open @evorog_bot in Telegram'}
+            </a>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255,215,0,0.7)', marginTop: '1rem' }}>
+              {isUa ? 'Слава Україні! 🇺🇦 Ми повернемось.' : 'Slava Ukraini! 🇺🇦 We will return.'}
+            </p>
+          </div>
         </div>
+        {renderWarCrimesCard()}
       </div>
-      {renderWarCrimesCard()}
-    </div>
-  );
+    );
+  };
 
   // ––– Render: Europe / Abroad –––
   const renderAbroadDashboard = () => (
@@ -509,16 +638,19 @@ function App() {
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div className="context-card-header" style={{ marginBottom: '1rem' }}>
             <div className="context-icon donate"><IconShield /></div>
-            <h4 className="context-title donate">War Doesn&apos;t Stay on the Map</h4>
+            <h4 className="context-title donate">
+              {isEn ? "War Doesn't Stay on the Map" : "Війна не залишається на карті"}
+            </h4>
           </div>
           <p className="context-text donate" style={{ marginBottom: '1.2rem', lineHeight: 1.75 }}>
-            In a world where borders connect us all, a conflict that seems far away rarely stays that way.
-            For {data ? Math.round(data.currentDistanceKm) : '—'} km, Ukrainian soldiers have held a line
-            that keeps millions of people in their homes — on every continent — without even knowing it.
+            {isEn
+              ? `In a world where borders connect us all, a conflict that seems far away rarely stays that way. For ${data ? Math.round(data.currentDistanceKm) : '—'} km, Ukrainian soldiers have held a line that keeps millions of people in their homes — on every continent — without even knowing it.`
+              : `У світі, де кордони поєднують нас усіх, конфлікт, який здається далеким, рідко залишається таким. Вже на відстані ${data ? Math.round(data.currentDistanceKm) : '—'} км українські воїни тримають лінію, яка оберігає мільйони людей у їхніх домівках — на кожному континенті — часто без їхнього відома.`}
           </p>
           <p className="context-text donate" style={{ color: 'rgba(180,210,255,0.8)', fontSize: '0.95rem', lineHeight: 1.7 }}>
-            Peace is not guaranteed by geography. It is maintained by people who choose to act.
-            The most meaningful thing anyone can do right now is to support Ukraine&apos;s resilience.
+            {isEn
+              ? "Peace is not guaranteed by geography. It is maintained by people who choose to act. The most meaningful thing anyone can do right now is to support Ukraine's resilience."
+              : "Мир не гарантується географією. Його підтримують люди, які обирають діяти. Найважливіше, що може зробити кожен зараз — це підтримати стійкість України."}
           </p>
         </div>
       </div>
@@ -531,18 +663,18 @@ function App() {
             <div className="readout-main">
               <div className="readout-sys-label">
                 <span className={`pulse-dot ${loading ? 'yellow' : 'green'}`} />
-                Distance to Occupied Positions
+                {isEn ? 'Distance to Occupied Positions' : 'Відстань до окупованих позицій'}
               </div>
               <div className={`status-label ${status.cls}`}>{status.label}</div>
               <div className="distance-display">
                 <span className={`distance-number ${status.cls}`}>
                   {data ? Math.round(data.currentDistanceKm) : '—'}
                 </span>
-                <span className="distance-unit">km</span>
+                <span className="distance-unit">{isEn ? 'km' : 'км'}</span>
               </div>
               {/* Direction row */}
               {data?.nearestFrontlinePoint && location && (() => {
-                const dir = getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng);
+                const dir = getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang);
                 return dir ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem', fontFamily: "'JetBrains Mono',monospace", fontSize: '11px' }}>
                     <span style={{ color: 'rgba(255,68,68,0.7)', fontSize: 16 }}>{dir.symbol}</span>
@@ -557,15 +689,20 @@ function App() {
             <div className="metrics-panel">
               <div className="metric-card">
                 <div className="metric-label">
-                  <span>7-day Front Shift</span>
+                  <span>{isEn ? '7-day Front Shift' : 'Зміна за 7 днів'}</span>
                   {dynamics.cls === 'red' ? <IconTrendUp /> : dynamics.cls === 'green' ? <IconTrendDown /> : <IconTrendUp />}
                 </div>
                 <div className={`metric-value ${dynamics.cls}`}>
-                  {dynamics.text} <span style={{ fontSize: '0.7em', opacity: 0.5 }}>km</span>
+                  {dynamics.text} <span style={{ fontSize: '0.7em', opacity: 0.5 }}>{isEn ? 'km' : 'км'}</span>
                 </div>
                 {data?.change7dKm > 0.5 && (
                   <div style={{ fontSize: '0.7rem', color: '#ff6b6b', marginTop: '0.3rem' }}>
-                    ↑ Front advanced toward you this week
+                    {isEn ? '↑ Front advanced toward you' : '↑ Фронт наблизився'}
+                  </div>
+                )}
+                {data?.change7dKm < -0.5 && (
+                  <div style={{ fontSize: '0.7rem', color: '#4ade80', marginTop: '0.3rem' }}>
+                    {isEn ? '↓ Front moved away' : '↓ Фронт відсунувся'}
                   </div>
                 )}
               </div>
@@ -592,6 +729,7 @@ function App() {
             frontLat={data?.nearestFrontlinePoint?.lat}
             frontLng={data?.nearestFrontlinePoint?.lng}
             distanceKm={data?.currentDistanceKm}
+            directionLabel={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang) : null}
           />
           <div className="map-tag">
             <div className="ping" />
@@ -603,14 +741,16 @@ function App() {
           <div style={{ position: 'relative', zIndex: 2 }}>
             <div className="context-card-header" style={{ marginBottom: '0.75rem' }}>
               <div className="context-icon donate"><IconHeart /></div>
-              <h4 className="context-title donate">Support Ukraine</h4>
+              <h4 className="context-title donate">{isEn ? 'Support Ukraine' : 'Підтримай Україну'}</h4>
             </div>
             <p className="context-text donate">
-              You are far from the front line, but your support brings victory closer. Every donation goes directly to defense and rebuilding.
+              {isEn
+                ? 'You are far from the front line, but your support brings victory closer. Every donation goes directly to defense and rebuilding.'
+                : 'Ви далеко від фронту, але ваша підтримка наближає перемогу. Кожен донат іде на захист та відновлення України.'}
             </p>
             <a href="https://u24.gov.ua/" target="_blank" rel="noreferrer" className="context-btn donate">
               <IconHeart />
-              Donate via United24
+              {isEn ? 'Donate via United24' : 'Підтримати через United24'}
             </a>
             <button
               className="context-btn share-story-btn"
@@ -618,7 +758,7 @@ function App() {
               style={{ marginTop: '0.75rem' }}
             >
               <IconInstagram />
-              Share to Instagram Stories
+              {isEn ? 'Share to Instagram Stories' : 'Поділитись в Instagram Stories'}
             </button>
           </div>
         </div>
@@ -626,7 +766,7 @@ function App() {
       {showStory && (
         <ShareStoryCard
           distanceKm={data?.currentDistanceKm}
-          directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng) : null}
+          directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang) : null}
           frontLat={data?.nearestFrontlinePoint?.lat}
           frontLng={data?.nearestFrontlinePoint?.lng}
           userLat={location?.lat}
@@ -640,7 +780,8 @@ function App() {
 
   // ––– Render: Ukraine (free territory) –––
   const renderUkraineDashboard = () => {
-    const grade = getUkraineThreatGrade(data?.currentDistanceKm);
+    // All text inside is driven by `isEn` so changing lang re-renders correctly
+    const grade = getUkraineThreatGrade(data?.currentDistanceKm, lang);
     return (
       <div className="dashboard animate-in" style={{ animationDelay: '0.1s' }}>
 
@@ -652,18 +793,18 @@ function App() {
               <div className="readout-main">
                 <div className="readout-sys-label">
                   <span className={`pulse-dot ${loading ? 'yellow' : 'green'}`} />
-                  Відстань до окупованих позицій
+                  {isEn ? 'Distance to Occupied Positions' : 'Відстань до окупованих позицій'}
                 </div>
                 <div className={`status-label ${grade.cls}`}>{grade.label}</div>
                 <div className="distance-display">
                   <span className={`distance-number ${grade.cls}`}>
                     {data ? Math.round(data.currentDistanceKm) : '—'}
                   </span>
-                  <span className="distance-unit">км</span>
+                  <span className="distance-unit">{isEn ? 'km' : 'км'}</span>
                 </div>
                 {/* Direction row */}
                 {data?.nearestFrontlinePoint && (() => {
-                  const dir = getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng);
+                  const dir = getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang);
                   return dir ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem', fontFamily: "'JetBrains Mono',monospace", fontSize: '11px' }}>
                       <span style={{ color: 'rgba(255,68,68,0.7)', fontSize: 16 }}>{dir.symbol}</span>
@@ -685,20 +826,20 @@ function App() {
                 {/* 7-day dynamics */}
                 <div className="metric-card">
                   <div className="metric-label">
-                    <span>Зміна за 7 днів</span>
+                    <span>{isEn ? '7-day Front Shift' : 'Зміна за 7 днів'}</span>
                     {dynamics.cls === 'red' ? <IconTrendUp /> : dynamics.cls === 'green' ? <IconTrendDown /> : <IconTrendUp />}
                   </div>
                   <div className={`metric-value ${dynamics.cls}`}>
-                    {dynamics.text} <span style={{ fontSize: '0.7em', opacity: 0.5 }}>км</span>
+                    {dynamics.text} <span style={{ fontSize: '0.7em', opacity: 0.5 }}>{isEn ? 'km' : 'км'}</span>
                   </div>
                   {data?.change7dKm > 0.5 && (
                     <div style={{ fontSize: '0.7rem', color: '#ff6b6b', marginTop: '0.3rem' }}>
-                      ↑ Фронт наблизився цього тижня
+                      {isEn ? '↑ Front advanced toward you this week' : '↑ Фронт наблизився цього тижня'}
                     </div>
                   )}
                   {data?.change7dKm < -0.5 && (
                     <div style={{ fontSize: '0.7rem', color: '#4ade80', marginTop: '0.3rem' }}>
-                      ↓ Фронт відсунувся цього тижня
+                      {isEn ? '↓ Front moved away this week' : '↓ Фронт відсунувся цього тижня'}
                     </div>
                   )}
                 </div>
@@ -711,7 +852,7 @@ function App() {
 
                 <button className="sync-btn" onClick={handleGetLocation}>
                   <IconRefresh spinning={loading} />
-                  {loading ? 'Оновлення...' : 'Синхронізація'}
+                  {loading ? (isEn ? 'Updating...' : 'Оновлення...') : (isEn ? 'Rescan' : 'Синхронізація')}
                 </button>
               </div>
             </div>
@@ -723,14 +864,14 @@ function App() {
           <div className="context-card russia-card" style={{ padding: '2rem 2.5rem' }}>
             <div style={{ position: 'relative', zIndex: 2 }}>
               <h4 style={{ color: '#ff6b6b', marginBottom: '0.75rem', fontSize: '1.1rem' }}>
-                🏃 Офіційні ресурси евакуації
+                {isEn ? 'Official Evacuation Resources' : 'Офіційні ресурси евакуації'}
               </h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <a href="https://evakuacia.gov.ua" target="_blank" rel="noreferrer" className="context-btn russia" style={{ flex: 1, minWidth: 200, margin: 0 }}>
-                  Евакуація.gov.ua <IconExternal />
+                  {isEn ? 'evakuacia.gov.ua' : 'Евакуація.gov.ua'} <IconExternal />
                 </a>
-                <a href="https://t.me/evorog_bot" target="_blank" rel="noreferrer" className="context-btn russia" style={{ flex: 1, minWidth: 200, margin: 0 }}>
-                  <IconSend /> @evorog_bot
+                <a href="https://t.me/Evacuation2022_bot" target="_blank" rel="noreferrer" className="context-btn russia" style={{ flex: 1, minWidth: 200, margin: 0 }}>
+                  <IconSend /> @Evacuation2022_bot
                 </a>
               </div>
             </div>
@@ -746,7 +887,7 @@ function App() {
               frontLat={data?.nearestFrontlinePoint?.lat}
               frontLng={data?.nearestFrontlinePoint?.lng}
               distanceKm={data?.currentDistanceKm}
-              directionLabel={data?.nearestFrontlinePoint ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng)?.region : null}
+              directionLabel={data?.nearestFrontlinePoint ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang)?.region : null}
             />
             <div className="map-tag">
               <div className="ping" />
@@ -763,15 +904,15 @@ function App() {
             onClick={() => setShowStory(true)}
           >
             <IconInstagram />
-            Поділитись в Instagram Stories
+            {isEn ? 'Share to Instagram Stories' : 'Поділитись в Instagram Stories'}
           </button>
-          <p className="share-hint">Розкажіть про відстань до фронту — про це важливо пам&apos;ятати</p>
+          <p className="share-hint">{isEn ? 'Share your distance to the frontline — this matters' : 'Розкажіть про відстань до фронту — про це важливо пам\'ятати'}</p>
         </div>
 
         {showStory && (
           <ShareStoryCard
             distanceKm={data?.currentDistanceKm}
-            directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng) : null}
+            directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang) : null}
             frontLat={data?.nearestFrontlinePoint?.lat}
             frontLng={data?.nearestFrontlinePoint?.lng}
             userLat={location?.lat}
@@ -823,7 +964,7 @@ function App() {
               <span className={lang === 'en' ? 'lang-btn-active' : 'lang-btn'}>EN</span>
             </button>
           </div>
-          <h1>Frontline<br />Radar</h1>
+          <h1>Front<br />Radar</h1>
           <p className="header-subtitle">
             {isEn
               ? 'Automated proximity analysis to Russian-occupied territories based on DeepStateUA intelligence data.'
@@ -875,12 +1016,12 @@ function App() {
         <footer className="footer">
           <div className="footer-divider">
             <div className="line" />
-            <span>Слава Україні 🇺🇦</span>
+            <span>{isEn ? 'Glory to Ukraine 🇺🇦' : 'Слава Україні 🇺🇦'}</span>
             <div className="line" />
           </div>
           <div className="footer-meta">
             <div className="footer-meta-item">
-              <span className="label">Джерело</span>
+              <span className="label">{isEn ? 'Source' : 'Джерело'}</span>
               <span className="value">DeepStateUA</span>
             </div>
             <div className="footer-meta-item">
@@ -888,11 +1029,11 @@ function App() {
               <span className="value">Turf.js</span>
             </div>
             <div className="footer-meta-item">
-              <span className="label">Оновлено</span>
-              <span className="value">{new Date().toLocaleTimeString('uk-UA')}</span>
+              <span className="label">{isEn ? 'Updated' : 'Оновлено'}</span>
+              <span className="value">{new Date().toLocaleTimeString(isEn ? 'en-US' : 'uk-UA')}</span>
             </div>
             <div className="footer-meta-item">
-              <span className="label">Статус</span>
+              <span className="label">{isEn ? 'Status' : 'Статус'}</span>
               <span className="value operational">Operational</span>
             </div>
           </div>

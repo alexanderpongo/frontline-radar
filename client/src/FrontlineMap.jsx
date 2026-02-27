@@ -66,21 +66,16 @@ const DARK_CSS = `
   .frontline-map .leaflet-tile-pane {
     filter: brightness(0.72) contrast(1.05) saturate(0.7) !important;
   }
-  .frontline-map .leaflet-pane,
-  .frontline-map .leaflet-top,
-  .frontline-map .leaflet-bottom {
-    z-index: unset !important;
-  }
   .frontline-map .leaflet-control-container .leaflet-top {
     z-index: 600 !important;
   }
 `;
 
 if (typeof document !== 'undefined' && !document.getElementById('frontline-map-css')) {
-    const style = document.createElement('style');
-    style.id = 'frontline-map-css';
-    style.textContent = DARK_CSS;
-    document.head.appendChild(style);
+  const style = document.createElement('style');
+  style.id = 'frontline-map-css';
+  style.textContent = DARK_CSS;
+  document.head.appendChild(style);
 }
 
 // ––– SVG Marker Icons –––
@@ -103,140 +98,147 @@ const frontIconSvg = `
   </div>`;
 
 const makeIcon = (svg, size = 32) => L.divIcon({
-    html: svg,
-    className: '',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -(size / 2) - 4],
+  html: svg,
+  className: '',
+  iconSize: [size, size],
+  iconAnchor: [size / 2, size / 2],
+  popupAnchor: [0, -(size / 2) - 4],
 });
 
 function FrontlineMap({ userLat, userLng, frontLat, frontLng, distanceKm, directionLabel }) {
-    const mapRef = useRef(null);
-    const mapInstanceRef = useRef(null);
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
-    useEffect(() => {
-        if (!mapRef.current || mapInstanceRef.current) return;
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
 
-        const map = L.map(mapRef.current, {
-            zoomControl: true,
-            scrollWheelZoom: false,
-            dragging: true,
-            attributionControl: false,
-        });
+    const map = L.map(mapRef.current, {
+      zoomControl: true,
+      scrollWheelZoom: false,
+      dragging: true,
+      attributionControl: false,
+    });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-        }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+    }).addTo(map);
 
-        mapInstanceRef.current = map;
-        return () => { map.remove(); mapInstanceRef.current = null; };
-    }, []);
+    mapInstanceRef.current = map;
+    return () => { map.remove(); mapInstanceRef.current = null; };
+  }, []);
 
-    useEffect(() => {
-        const map = mapInstanceRef.current;
-        if (!map || !userLat || !userLng) return;
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !userLat || !userLng) return;
 
-        map.eachLayer(layer => {
-            if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
-        });
+    map.eachLayer(layer => {
+      if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
+    });
 
-        const userLatLng = [userLat, userLng];
+    const userLatLng = [userLat, userLng];
 
-        // User marker
-        L.marker(userLatLng, { icon: makeIcon(userIconSvg) })
-            .addTo(map)
-            .bindPopup(`<span style="color:#4ade80;font-weight:700;letter-spacing:0.1em">◉ YOUR POSITION</span><br/><span style="color:rgba(255,255,255,0.4);font-size:10px">${userLat.toFixed(4)}°N ${userLng.toFixed(4)}°E</span>`);
+    // User marker
+    L.marker(userLatLng, { icon: makeIcon(userIconSvg) })
+      .addTo(map)
+      .bindPopup(`<span style="color:#4ade80;font-weight:700;letter-spacing:0.1em">◉ YOUR POSITION</span><br/><span style="color:rgba(255,255,255,0.4);font-size:10px">${userLat.toFixed(4)}°N ${userLng.toFixed(4)}°E</span>`);
 
-        const bounds = [userLatLng];
+    const bounds = [userLatLng];
 
-        if (frontLat && frontLng) {
-            const frontLatLng = [frontLat, frontLng];
+    if (frontLat && frontLng) {
+      const frontLatLng = [frontLat, frontLng];
 
-            // Frontline marker
-            L.marker(frontLatLng, { icon: makeIcon(frontIconSvg) })
-                .addTo(map)
-                .bindPopup(`<span style="color:#ff4444;font-weight:700;letter-spacing:0.1em">✕ FRONTLINE</span><br/><span style="color:rgba(255,255,255,0.4);font-size:10px">${distanceKm ? '~' + Math.round(distanceKm) + ' km away' : ''}</span>`);
+      // Frontline marker
+      L.marker(frontLatLng, { icon: makeIcon(frontIconSvg) })
+        .addTo(map)
+        .bindPopup(`<span style="color:#ff4444;font-weight:700;letter-spacing:0.1em">✕ FRONTLINE</span><br/><span style="color:rgba(255,255,255,0.4);font-size:10px">${distanceKm ? '~' + Math.round(distanceKm) + ' km away' : ''}</span>`);
 
-            // Glow shadow line (wider, semi-transparent)
-            L.polyline([userLatLng, frontLatLng], {
-                color: 'rgba(255,68,68,0.15)',
-                weight: 10,
-                lineCap: 'round',
-            }).addTo(map);
+      // Glow shadow line (wider, semi-transparent)
+      L.polyline([userLatLng, frontLatLng], {
+        color: 'rgba(255,68,68,0.15)',
+        weight: 10,
+        lineCap: 'round',
+      }).addTo(map);
 
-            // Primary dashed red line
-            L.polyline([userLatLng, frontLatLng], {
-                color: '#ff4444',
-                weight: 1.5,
-                dashArray: '10 8',
-                opacity: 0.9,
-            }).addTo(map);
+      // Primary dashed red line
+      L.polyline([userLatLng, frontLatLng], {
+        color: '#ff4444',
+        weight: 1.5,
+        dashArray: '10 8',
+        opacity: 0.9,
+      }).addTo(map);
 
-            // Distance label at midpoint
-            if (distanceKm) {
-                const midLat = (userLat + frontLat) / 2;
-                const midLng = (userLng + frontLng) / 2;
-                const label = directionLabel
-                    ? `${directionLabel} · ${Math.round(distanceKm)} км`
-                    : `${Math.round(distanceKm)} км`;
-                // Estimate width: ~7px per char + 20px padding
-                const estimatedW = label.length * 7 + 20;
-                L.marker([midLat, midLng], {
-                    icon: L.divIcon({
-                        html: `<div style="
-              background: rgba(6,6,12,0.92);
+      // Distance + Direction label at midpoint
+      if (distanceKm) {
+        const midLat = (userLat + frontLat) / 2;
+        const midLng = (userLng + frontLng) / 2;
+
+        const dirText = typeof directionLabel === 'object' ? directionLabel?.region : directionLabel;
+        const labelText = dirText
+          ? `${dirText} · ${Math.round(distanceKm)} км`
+          : `${Math.round(distanceKm)} км`;
+
+        L.marker([midLat, midLng], {
+          icon: L.divIcon({
+            html: `<div style="
+              background: rgba(12,12,20,0.95);
               color: #ff4444;
-              font-size: 10px;
-              font-weight: 700;
-              padding: 4px 10px;
+              font-size: 11px;
+              font-weight: 810;
+              padding: 6px 14px;
               border-radius: 100px;
-              border: 1px solid rgba(255,68,68,0.35);
+              border: 1px solid rgba(255,68,68,0.5);
               white-space: nowrap;
               font-family: 'JetBrains Mono', monospace;
-              letter-spacing: 0.1em;
-              box-shadow: 0 2px 16px rgba(0,0,0,0.6), 0 0 12px rgba(255,68,68,0.15);
+              letter-spacing: 0.05em;
+              box-shadow: 0 4px 24px rgba(0,0,0,0.8), 0 0 15px rgba(255,68,68,0.25);
               backdrop-filter: blur(8px);
+              transform: translate(-50%, -50%);
               display: inline-block;
-            ">${label}</div>`,
-                        className: '',
-                        iconAnchor: [estimatedW / 2, 12],
-                    })
-                }).addTo(map);
-            }
+            ">${labelText}</div>`,
+            className: '',
+            iconSize: [0, 0],
+          })
+        }).addTo(map);
+      }
 
-            bounds.push(frontLatLng);
-            map.fitBounds(L.latLngBounds(bounds), { padding: [50, 50] });
-        } else {
-            map.setView(userLatLng, 7);
-        }
-    }, [userLat, userLng, frontLat, frontLng, distanceKm, directionLabel]);
+      bounds.push(frontLatLng);
+      // Only fitBounds if coordinates haven't been fit before or if they changed significantly
+      const coordStr = `${userLat},${userLng},${frontLat},${frontLng}`;
+      if (map._lastFitCoords !== coordStr) {
+        map.fitBounds(L.latLngBounds(bounds), { padding: [50, 50] });
+        map._lastFitCoords = coordStr;
+      }
+    } else {
+      map.setView(userLatLng, 7);
+    }
+  }, [userLat, userLng, frontLat, frontLng, distanceKm, directionLabel]);
 
-    return (
-        <div className="frontline-map" style={{
-            position: 'relative',
-            height: '100%',
-            width: '100%',
-            borderRadius: 'inherit',
-            overflow: 'hidden',
-        }}>
-            <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
+  return (
+    <div className="frontline-map" style={{
+      position: 'relative',
+      height: '100%',
+      width: '100%',
+      borderRadius: 'inherit',
+      overflow: 'hidden',
+    }}>
+      <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
 
-            {/* Bottom gradient matching old OSM style */}
-            <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                height: '50%',
-                background: 'linear-gradient(to top, rgba(3,3,5,0.8) 0%, transparent 100%)',
-                pointerEvents: 'none', zIndex: 500,
-            }} />
-            {/* Top gradient */}
-            <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0,
-                height: '20%',
-                background: 'linear-gradient(to bottom, rgba(3,3,5,0.4) 0%, transparent 100%)',
-                pointerEvents: 'none', zIndex: 500,
-            }} />
-        </div>
-    );
+      {/* Bottom gradient matching old OSM style */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: '50%',
+        background: 'linear-gradient(to top, rgba(3,3,5,0.8) 0%, transparent 100%)',
+        pointerEvents: 'none', zIndex: 500,
+      }} />
+      {/* Top gradient */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: '20%',
+        background: 'linear-gradient(to bottom, rgba(3,3,5,0.4) 0%, transparent 100%)',
+        pointerEvents: 'none', zIndex: 500,
+      }} />
+    </div>
+  );
 }
 
 export default FrontlineMap;

@@ -8,9 +8,25 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Security Headers
+app.use(helmet());
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+
+app.use('/api/', limiter);
 app.use(cors());
 app.use(express.json());
 
@@ -65,10 +81,17 @@ async function getHistoryGeoJson(hoursAgo = 24) {
     }
 }
 
-// Returns the exact nearest boundary point on the frontline polygons.
-// We iterate raw coordinate rings directly because turf.polygonToLine() returns a
-// FeatureCollection for multi-ring polygons, which nearestPointOnLine() cannot handle
-// and would silently snap to an incorrect location (e.g., Japan).
+// Returns the exact nearest boundary point on the active frontline (contact line).
+//
+// KEY INSIGHT: Occupied territory polygons from DeepState have their OUTER ring
+// tracing the full perimeter — including the Russia/Belarus STATE BORDER on the east,
+// which is NOT the frontline. The actual contact line between free and occupied Ukraine
+// lies INSIDE Ukraine's geographic bounds.
+//
+// FIX: Instead of snapping to the full outer ring, we process each edge SEGMENT
+// individually and only consider segments whose midpoint falls INSIDE Ukraine
+// (roughly lng 22–40, lat 44–53 and NOT along the known Russia state border east edge).
+// This discards border-with-Russia segments and keeps only the active frontline segments.
 function findNearestDistanceWithPoint(point, geoJson) {
     if (!geoJson || !geoJson.features) return { distance: null, nearest: null };
 
@@ -76,31 +99,49 @@ function findNearestDistanceWithPoint(point, geoJson) {
     let nearestCoord = null;
     const userPoint = turf.point([point.lng, point.lat]);
 
-    // Process one ring (array of [lng, lat] positions) — only the outer ring matters.
-    function processRing(ring) {
+    // Ukraine conflict interior bounding box — segments must have their midpoint here
+    // to be considered part of the active frontline (not the Russia/Belarus state border).
+    const FL_LAT_MIN = 44.0, FL_LAT_MAX = 51.5; // 51.5 excludes Belarus-Ukraine border
+    const FL_LNG_MIN = 22.0, FL_LNG_MAX = 39.2; // <39.2 excludes stale eastern borders
+
+    function processRingFrontlineOnly(ring) {
         if (!ring || ring.length < 2) return;
-        try {
-            const line = turf.lineString(ring);
-            const dist = turf.pointToLineDistance(userPoint, line, { units: 'kilometers' });
-            if (dist < minDistance) {
-                minDistance = dist;
-                const snapped = turf.nearestPointOnLine(line, userPoint, { units: 'kilometers' });
-                nearestCoord = snapped.geometry.coordinates;
-            }
-        } catch (_) { /* skip malformed ring */ }
+        for (let i = 0; i < ring.length - 1; i++) {
+            const a = ring[i];      // [lng, lat]
+            const b = ring[i + 1]; // [lng, lat]
+            // Midpoint of this edge segment
+            const midLng = (a[0] + b[0]) / 2;
+            const midLat = (a[1] + b[1]) / 2;
+            // Only edges whose midpoint is inside Ukraine's active-frontline bbox
+            if (
+                midLat < FL_LAT_MIN || midLat > FL_LAT_MAX ||
+                midLng < FL_LNG_MIN || midLng > FL_LNG_MAX
+            ) continue;
+            try {
+                const seg = turf.lineString([a, b]);
+                const dist = turf.pointToLineDistance(userPoint, seg, { units: 'kilometers' });
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    const snapped = turf.nearestPointOnLine(seg, userPoint, { units: 'kilometers' });
+                    nearestCoord = snapped.geometry.coordinates;
+                }
+            } catch (_) { /* skip malformed segment */ }
+        }
     }
 
     geoJson.features.forEach(feature => {
-        const isEnemy = feature.properties.fill === '#a52714' ||
-            feature.properties.fill === '#ff5252' ||
-            feature.properties.fill === '#bdbdbd';
+        // Red (#ff5252), Gray Zone (#bdbdbd), and Unknown Status (#bcaaa4)
+        // We EXCLUDE #a52714 (Old occupied since 2014) because its boundaries
+        // often represent old 2014 contact lines (like Stanytsia Luhanska)
+        // that are no longer active frontlines.
+        const isEnemy = feature.properties.fill === '#ff5252' ||
+            feature.properties.fill === '#bdbdbd' ||
+            feature.properties.fill === '#bcaaa4';
 
         if (!feature.geometry || !isEnemy) return;
 
-        // DeepState data uses the same colors for ALL Russian-controlled areas
-        // (Kaliningrad, Crimea, occupied Donbas, etc). We ONLY want features
-        // that are part of the active frontline in Ukraine.
-        // Filter by centroid being within the Ukraine conflict bounding box.
+        // Only process features whose centroid is in the Ukraine conflict zone.
+        // This filters out Kaliningrad, Abkhazia, etc.
         try {
             const c = turf.centroid(feature).geometry.coordinates;
             const cLng = c[0], cLat = c[1];
@@ -110,12 +151,16 @@ function findNearestDistanceWithPoint(point, geoJson) {
 
         try {
             if (feature.geometry.type === 'Polygon') {
-                // coordinates[0] is the outer ring
-                processRing(feature.geometry.coordinates[0]);
+                // Process ALL rings (outer boundary + any holes) — the frontline
+                // contact line is encoded in the outer ring but we filter by bbox.
+                for (const ring of feature.geometry.coordinates) {
+                    processRingFrontlineOnly(ring);
+                }
             } else if (feature.geometry.type === 'MultiPolygon') {
-                // Each item: [outerRing, ...holeRings]; we only need the outer ring
                 for (const polygonCoords of feature.geometry.coordinates) {
-                    processRing(polygonCoords[0]);
+                    for (const ring of polygonCoords) {
+                        processRingFrontlineOnly(ring);
+                    }
                 }
             }
         } catch (e) {
@@ -153,21 +198,15 @@ function classifyRegion(lat, lng) {
     const isMoscowArea = lat >= 54 && lat <= 57 && lng >= 35 && lng <= 40;
     const isStPetersburg = lat >= 59 && lat <= 61 && lng >= 29 && lng <= 31;
 
-    // Belarus (occupied ally)
-    const isBelarus = lat >= 51.2 && lat <= 56.2 && lng >= 23.2 && lng <= 32.8;
-
     if (isCrimea || isKaliningrad || isMoscowArea || isStPetersburg || isRussiaEurope || isRussiaAsia) {
         return 'russia';
-    }
-
-    if (isBelarus) {
-        return 'belarus';
     }
 
     if (isUkraineBbox) {
         return 'ukraine';
     }
 
+    // Everything else (including Belarus, Moldova, EU countries) = abroad
     return 'abroad';
 }
 
