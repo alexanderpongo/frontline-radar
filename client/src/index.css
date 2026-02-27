@@ -123,39 +123,62 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
 
-/* Language Toggle */
-.lang-toggle {
+/* ––– Language Toggle (centered pill) ––– */
+.lang-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.lang-toggle-center {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 100px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: var(--text-muted);
   cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+}
+
+.lang-toggle-center:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lang-btn {
+  padding: 6px 16px;
+  color: rgba(255, 255, 255, 0.3);
   transition: all 0.2s;
 }
 
-.lang-toggle:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.lang-active {
+.lang-btn-active {
+  padding: 6px 16px;
   color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
 }
 
-.lang-sep {
-  opacity: 0.3;
+.lang-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* Keep old toggle class for fallback */
+.lang-toggle {
+  display: none;
 }
 
 .header-badge {
@@ -1448,6 +1471,36 @@ body {
 .story-arrow {
   color: #ff4444;
   font-size: 12px;
+}
+
+/* Mini map inside story card */
+.story-minimap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0.5rem 0 0.75rem;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.story-minimap svg {
+  display: block;
+  max-width: 100%;
+}
+
+.story-minimap-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
 }
 
 .story-cta {

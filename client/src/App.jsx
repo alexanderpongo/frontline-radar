@@ -151,19 +151,33 @@ function getDirection(userLat, userLng, frontLat, frontLng) {
 }
 
 // ––– Instagram Story Card Generator –––
-function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
+function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat, userLng, lang, onClose }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const isUa = lang === 'uk';
 
   const distNum = distanceKm ? Math.round(distanceKm).toLocaleString('uk-UA') : '—';
   const distNumEn = distanceKm ? Math.round(distanceKm).toLocaleString() : '—';
-  const regionText = (directionInfo?.region || '').replace(' напрям', '').replace(' direction', '');
+  // Full direction name — no stripping
+  const regionText = directionInfo?.region || '';
+
+  // Mini-map: project Ukraine bbox to SVG (lng 22-42, lat 44-53)
+  const mapW = 200, mapH = 110;
+  function project(lat, lng) {
+    const x = ((lng - 22) / (42 - 22)) * mapW;
+    const y = mapH - ((lat - 44) / (53 - 44)) * mapH;
+    return [Math.round(x), Math.round(y)];
+  }
+  const frontPt = (frontLat && frontLng) ? project(frontLat, frontLng) : null;
+  // User dot: clamp to visible bbox for display
+  const uLat = Math.max(44, Math.min(53, userLat || 50));
+  const uLng = Math.max(22, Math.min(42, userLng || 30));
+  const userPt = project(uLat, uLng);
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      // dynamic import so it doesn't bloat initial bundle
       const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
@@ -182,9 +196,6 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
     }
   }, []);
 
-  // Choose language
-  const isUa = !isAbroad;
-  // Two short CTA lines that each fit on one line in the narrow card
   const cta = isUa
     ? ['Ця відстань може скоротитись.', 'Підтримайте Україну — зупиніть фронт.']
     : ['This distance could shrink.', 'Support Ukraine — stop the frontline.'];
@@ -198,15 +209,12 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
           {isUa ? 'Поділитись в Instagram Stories' : 'Share to Instagram Stories'}
         </h3>
         <p className="story-modal-hint">
-          {isUa
-            ? 'Завантажте картку і додайте в Stories'
-            : 'Download the card and add it to your Stories'}
+          {isUa ? 'Завантажте картку і додайте в Stories' : 'Download the card and add it to your Stories'}
         </p>
 
         {/* The card itself */}
         <div className="story-card-wrap">
           <div className="story-card" ref={cardRef}>
-            {/* Background gradient */}
             <div className="story-bg" />
 
             {/* Top badge */}
@@ -217,7 +225,6 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
               <div className="story-label-sm">
                 {isUa ? 'від мене до лінії фронту' : 'from me to the frontline'}
               </div>
-              {/* Number + unit always on one line */}
               <div className="story-distance-row">
                 <span className="story-distance">{isUa ? distNum : distNumEn}</span>
                 <span className="story-unit">{isUa ? 'км' : 'km'}</span>
@@ -230,6 +237,42 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
               )}
             </div>
 
+            {/* Mini map */}
+            <div className="story-minimap">
+              <svg width={mapW} height={mapH} viewBox={`0 0 ${mapW} ${mapH}`} xmlns="http://www.w3.org/2000/svg">
+                {/* Ukraine outline — simplified polygon */}
+                <polygon
+                  points="0,60 8,44 18,35 32,28 50,22 70,18 90,15 112,12 130,10 148,14 160,20 168,28 172,38 175,50 170,62 162,70 150,78 134,85 118,90 100,94 80,96 60,95 42,92 28,86 16,76 6,68"
+                  fill="rgba(30,60,100,0.18)"
+                  stroke="rgba(100,160,255,0.18)"
+                  strokeWidth="1"
+                />
+                {/* Frontline zone — rough eastern Ukraine blob */}
+                <ellipse cx="148" cy="52" rx="22" ry="30" fill="rgba(255,40,40,0.08)" stroke="rgba(255,60,60,0.3)" strokeWidth="0.8" strokeDasharray="3 2" />
+                {/* Line from user to front */}
+                {frontPt && (
+                  <line
+                    x1={userPt[0]} y1={userPt[1]}
+                    x2={frontPt[0]} y2={frontPt[1]}
+                    stroke="rgba(255,68,68,0.55)" strokeWidth="1" strokeDasharray="4 3"
+                  />
+                )}
+                {/* Frontline dot */}
+                {frontPt && (
+                  <>
+                    <circle cx={frontPt[0]} cy={frontPt[1]} r="5" fill="rgba(255,40,40,0.15)" />
+                    <circle cx={frontPt[0]} cy={frontPt[1]} r="2.5" fill="#ff4444" />
+                  </>
+                )}
+                {/* User dot */}
+                <circle cx={userPt[0]} cy={userPt[1]} r="4" fill="rgba(74,222,128,0.15)" />
+                <circle cx={userPt[0]} cy={userPt[1]} r="2" fill="#4ade80" />
+              </svg>
+              <div className="story-minimap-label">
+                {isUa ? '● ВИ   ✕ ФРОНТ' : '● YOU   ✕ FRONT'}
+              </div>
+            </div>
+
             {/* CTA lines */}
             <div className="story-cta">
               <div className="story-cta-line story-cta-1">{cta[0]}</div>
@@ -239,10 +282,9 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
             {/* Bottom */}
             <div className="story-bottom">
               <div className="story-site">{siteLine}</div>
-              <div className="story-source">Data: DeepStateUA</div>
+              <div className="story-source">{isUa ? 'Дані: DeepStateUA' : 'Data: DeepStateUA'}</div>
             </div>
 
-            {/* Decorative radar rings */}
             <div className="story-ring story-ring-1" />
             <div className="story-ring story-ring-2" />
             <div className="story-ring story-ring-3" />
@@ -575,7 +617,11 @@ function App() {
         <ShareStoryCard
           distanceKm={data?.currentDistanceKm}
           directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng) : null}
-          isAbroad={true}
+          frontLat={data?.nearestFrontlinePoint?.lat}
+          frontLng={data?.nearestFrontlinePoint?.lng}
+          userLat={location?.lat}
+          userLng={location?.lng}
+          lang={lang}
           onClose={() => setShowStory(false)}
         />
       )}
@@ -716,7 +762,11 @@ function App() {
           <ShareStoryCard
             distanceKm={data?.currentDistanceKm}
             directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng) : null}
-            isAbroad={false}
+            frontLat={data?.nearestFrontlinePoint?.lat}
+            frontLng={data?.nearestFrontlinePoint?.lng}
+            userLat={location?.lat}
+            userLng={location?.lng}
+            lang={lang}
             onClose={() => setShowStory(false)}
           />
         )}
@@ -744,20 +794,23 @@ function App() {
 
         {/* Header */}
         <header className="header animate-in">
+          {/* Top row: badge left, lang toggle right */}
           <div className="header-top-row">
             <div className="header-badge">
               <IconCrosshair />
               <span>Sentry System v2.1</span>
             </div>
-            {/* Language toggle */}
+          </div>
+          {/* Centered lang toggle */}
+          <div className="lang-toggle-wrap">
             <button
-              className="lang-toggle"
+              className="lang-toggle-center"
               onClick={() => setLang(l => l === 'uk' ? 'en' : 'uk')}
               title={isEn ? 'Switch to Ukrainian' : 'Switch to English'}
             >
-              <span className={lang === 'uk' ? 'lang-active' : ''}>UA</span>
-              <span className="lang-sep">·</span>
-              <span className={lang === 'en' ? 'lang-active' : ''}>EN</span>
+              <span className={lang === 'uk' ? 'lang-btn-active' : 'lang-btn'}>UA</span>
+              <span className="lang-divider" />
+              <span className={lang === 'en' ? 'lang-btn-active' : 'lang-btn'}>EN</span>
             </button>
           </div>
           <h1>Frontline<br />Radar</h1>
