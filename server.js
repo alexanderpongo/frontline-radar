@@ -65,6 +65,10 @@ async function getHistoryGeoJson(hoursAgo = 24) {
     }
 }
 
+// Returns the exact nearest boundary point on the frontline polygons.
+// We iterate raw coordinate rings directly because turf.polygonToLine() returns a
+// FeatureCollection for multi-ring polygons, which nearestPointOnLine() cannot handle
+// and would silently snap to an incorrect location (e.g., Japan).
 function findNearestDistanceWithPoint(point, geoJson) {
     if (!geoJson || !geoJson.features) return { distance: null, nearest: null };
 
@@ -72,54 +76,50 @@ function findNearestDistanceWithPoint(point, geoJson) {
     let nearestCoord = null;
     const userPoint = turf.point([point.lng, point.lat]);
 
+    // Process one ring (array of [lng, lat] positions) — only the outer ring matters.
+    function processRing(ring) {
+        if (!ring || ring.length < 2) return;
+        try {
+            const line = turf.lineString(ring);
+            const dist = turf.pointToLineDistance(userPoint, line, { units: 'kilometers' });
+            if (dist < minDistance) {
+                minDistance = dist;
+                const snapped = turf.nearestPointOnLine(line, userPoint, { units: 'kilometers' });
+                nearestCoord = snapped.geometry.coordinates;
+            }
+        } catch (_) { /* skip malformed ring */ }
+    }
+
     geoJson.features.forEach(feature => {
         const isEnemy = feature.properties.fill === '#a52714' ||
             feature.properties.fill === '#ff5252' ||
             feature.properties.fill === '#bdbdbd';
 
-        if (feature.geometry && isEnemy) {
-            try {
-                let distance;
-                let candidateNearest = null;
+        if (!feature.geometry || !isEnemy) return;
 
-                if (feature.geometry.type === 'Polygon') {
-                    const line = turf.polygonToLine(feature);
-                    distance = turf.pointToLineDistance(userPoint, line);
-                    const snapped = turf.nearestPointOnLine(line, userPoint);
-                    candidateNearest = snapped.geometry.coordinates;
-                } else if (feature.geometry.type === 'MultiPolygon') {
-                    let minPolyDist = Infinity;
-                    feature.geometry.coordinates.forEach(coords => {
-                        const poly = turf.polygon(coords);
-                        const line = turf.polygonToLine(poly);
-                        const dist = turf.pointToLineDistance(userPoint, line);
-                        if (dist < minPolyDist) {
-                            minPolyDist = dist;
-                            const snapped = turf.nearestPointOnLine(line, userPoint);
-                            candidateNearest = snapped.geometry.coordinates;
-                        }
-                    });
-                    distance = minPolyDist;
-                } else {
-                    const centroid = turf.centroid(feature);
-                    distance = turf.distance(userPoint, centroid);
-                    candidateNearest = centroid.geometry.coordinates;
-                }
+        // DeepState data uses the same colors for ALL Russian-controlled areas
+        // (Kaliningrad, Crimea, occupied Donbas, etc). We ONLY want features
+        // that are part of the active frontline in Ukraine.
+        // Filter by centroid being within the Ukraine conflict bounding box.
+        try {
+            const c = turf.centroid(feature).geometry.coordinates;
+            const cLng = c[0], cLat = c[1];
+            const inUkraineBbox = cLat >= 44.0 && cLat <= 53.0 && cLng >= 22.0 && cLng <= 42.0;
+            if (!inUkraineBbox) return;
+        } catch (_) { return; }
 
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestCoord = candidateNearest;
+        try {
+            if (feature.geometry.type === 'Polygon') {
+                // coordinates[0] is the outer ring
+                processRing(feature.geometry.coordinates[0]);
+            } else if (feature.geometry.type === 'MultiPolygon') {
+                // Each item: [outerRing, ...holeRings]; we only need the outer ring
+                for (const polygonCoords of feature.geometry.coordinates) {
+                    processRing(polygonCoords[0]);
                 }
-            } catch (e) {
-                try {
-                    const centroid = turf.centroid(feature);
-                    const distance = turf.distance(userPoint, centroid);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        nearestCoord = centroid.geometry.coordinates;
-                    }
-                } catch (e2) { }
             }
+        } catch (e) {
+            /* skip features with unexpected geometry */
         }
     });
 
