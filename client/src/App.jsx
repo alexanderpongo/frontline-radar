@@ -1012,6 +1012,18 @@ function App() {
               <span className="label">{isEn ? 'Status' : 'Статус'}</span>
               <span className="value operational">Operational</span>
             </div>
+            <div className="footer-meta-item">
+              <span className="label">{isEn ? 'Developer' : 'Розробник'}</span>
+              <a
+                href="https://www.linkedin.com/in/alexanderpongo/"
+                target="_blank"
+                rel="noreferrer"
+                className="value"
+                style={{ textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                {isEn ? 'Oleksandr Pongo' : 'Олександр Понго'}
+              </a>
+            </div>
           </div>
         </footer>
 
