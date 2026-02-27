@@ -275,6 +275,14 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showStory, setShowStory] = useState(false);
+  // lang: auto-detect on first render, then user can override
+  const defaultLang = () => {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get('testRegion') || '';
+    return (r === 'abroad' || r === 'europe') ? 'en' : 'uk';
+  };
+  const [lang, setLang] = useState(defaultLang);
+  const isEn = lang === 'en';
 
   // TEST MODE: override region via URL param
   const getRegion = () => {
@@ -301,8 +309,10 @@ function App() {
       const response = await fetch(`${API_BASE}/api/proximity?lat=${lat}&lng=${lng}`);
       const result = await response.json();
       setData(result);
+      // Auto-set language based on server region if not yet manually changed
+      if (result.region === 'abroad' || result.region === 'europe') setLang(l => l);
     } catch (err) {
-      setError(isAbroad ? "Failed to fetch data from server." : "Не вдалося отримати дані від сервера.");
+      setError(isEn ? 'Failed to fetch data from server.' : 'Не вдалося отримати дані від сервера.');
     } finally {
       setTimeout(() => setLoading(false), 1200);
     }
@@ -311,7 +321,7 @@ function App() {
   const handleGetLocation = () => {
     setError(null);
     setLoading(true);
-    if ("geolocation" in navigator) {
+    if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
@@ -319,12 +329,12 @@ function App() {
           fetchProximity(latitude, longitude);
         },
         () => {
-          setError(isAbroad ? "Location access denied." : "Доступ до геопозиції відхилено.");
+          setError(isEn ? 'Location access denied.' : 'Доступ до геопозиції відхилено.');
           setLoading(false);
         }
       );
     } else {
-      setError(isAbroad ? "Geolocation not supported." : "Геолокація не підтримується.");
+      setError(isEn ? 'Geolocation not supported.' : 'Геолокація не підтримується.');
       setLoading(false);
     }
   };
@@ -714,10 +724,7 @@ function App() {
     );
   };
 
-  // ––– Determine header language –––
-  const headerSubtitle = isAbroad
-    ? 'Automated proximity analysis to Russian-occupied territories based on DeepStateUA intelligence data.'
-    : 'Автоматизований аналіз відстані до окупованих Росією територій за даними розвідки DeepStateUA.';
+
 
   // Determine what to render after location
   const renderContent = () => {
@@ -737,12 +744,28 @@ function App() {
 
         {/* Header */}
         <header className="header animate-in">
-          <div className="header-badge">
-            <IconCrosshair />
-            <span>Sentry System v2.1</span>
+          <div className="header-top-row">
+            <div className="header-badge">
+              <IconCrosshair />
+              <span>Sentry System v2.1</span>
+            </div>
+            {/* Language toggle */}
+            <button
+              className="lang-toggle"
+              onClick={() => setLang(l => l === 'uk' ? 'en' : 'uk')}
+              title={isEn ? 'Switch to Ukrainian' : 'Switch to English'}
+            >
+              <span className={lang === 'uk' ? 'lang-active' : ''}>UA</span>
+              <span className="lang-sep">·</span>
+              <span className={lang === 'en' ? 'lang-active' : ''}>EN</span>
+            </button>
           </div>
           <h1>Frontline<br />Radar</h1>
-          <p className="header-subtitle">{headerSubtitle}</p>
+          <p className="header-subtitle">
+            {isEn
+              ? 'Automated proximity analysis to Russian-occupied territories based on DeepStateUA intelligence data.'
+              : 'Автоматизований аналіз відстані до окупованих Росією територій за даними розвідки DeepStateUA.'}
+          </p>
         </header>
 
         {/* Content */}
@@ -759,8 +782,8 @@ function App() {
                 </div>
               </div>
 
-              <h2>{isAbroad ? 'System Ready' : 'Система готова'}</h2>
-              <p>{isAbroad
+              <h2>{isEn ? 'System Ready' : 'Система готова'}</h2>
+              <p>{isEn
                 ? 'Allow location access to calculate your distance to Russian-occupied territory.'
                 : 'Надайте доступ до геопозиції для розрахунку відстані до окупованих Росією територій.'}</p>
 
@@ -769,8 +792,8 @@ function App() {
                 <button className="cta-btn" onClick={handleGetLocation} disabled={loading}>
                   {loading ? <IconRefresh spinning /> : <IconZap />}
                   {loading
-                    ? (isAbroad ? 'Scanning...' : 'Зчитування...')
-                    : (isAbroad ? 'Initiate Scan' : 'Ініціювати сканування')}
+                    ? (isEn ? 'Scanning...' : 'Зчитування...')
+                    : (isEn ? 'Initiate Scan' : 'Ініціювати сканування')}
                 </button>
               </div>
 

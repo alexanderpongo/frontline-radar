@@ -65,17 +65,14 @@ async function getHistoryGeoJson(hoursAgo = 24) {
     }
 }
 
-function findNearestDistance(point, geoJson) {
-    if (!geoJson || !geoJson.features) return null;
+function findNearestDistanceWithPoint(point, geoJson) {
+    if (!geoJson || !geoJson.features) return { distance: null, nearest: null };
 
     let minDistance = Infinity;
+    let nearestCoord = null;
     const userPoint = turf.point([point.lng, point.lat]);
 
     geoJson.features.forEach(feature => {
-        // DeepState colors:
-        // #a52714: Occupied
-        // #ff5252: Occupied/Breakthrough
-        // #bdbdbd: Frontline/Grey zone
         const isEnemy = feature.properties.fill === '#a52714' ||
             feature.properties.fill === '#ff5252' ||
             feature.properties.fill === '#bdbdbd';
@@ -83,38 +80,57 @@ function findNearestDistance(point, geoJson) {
         if (feature.geometry && isEnemy) {
             try {
                 let distance;
+                let candidateNearest = null;
+
                 if (feature.geometry.type === 'Polygon') {
-                    distance = turf.pointToLineDistance(userPoint, turf.polygonToLine(feature));
+                    const line = turf.polygonToLine(feature);
+                    distance = turf.pointToLineDistance(userPoint, line);
+                    const snapped = turf.nearestPointOnLine(line, userPoint);
+                    candidateNearest = snapped.geometry.coordinates;
                 } else if (feature.geometry.type === 'MultiPolygon') {
-                    // For MultiPolygon, find min distance to any constituent polygon
                     let minPolyDist = Infinity;
                     feature.geometry.coordinates.forEach(coords => {
                         const poly = turf.polygon(coords);
-                        const dist = turf.pointToLineDistance(userPoint, turf.polygonToLine(poly));
-                        if (dist < minPolyDist) minPolyDist = dist;
+                        const line = turf.polygonToLine(poly);
+                        const dist = turf.pointToLineDistance(userPoint, line);
+                        if (dist < minPolyDist) {
+                            minPolyDist = dist;
+                            const snapped = turf.nearestPointOnLine(line, userPoint);
+                            candidateNearest = snapped.geometry.coordinates;
+                        }
                     });
                     distance = minPolyDist;
                 } else {
-                    // Fallback to nearest point
-                    distance = turf.distance(userPoint, turf.nearestPoint(userPoint, feature));
+                    const centroid = turf.centroid(feature);
+                    distance = turf.distance(userPoint, centroid);
+                    candidateNearest = centroid.geometry.coordinates;
                 }
 
                 if (distance < minDistance) {
                     minDistance = distance;
+                    nearestCoord = candidateNearest;
                 }
             } catch (e) {
-                // If turf fails (e.g. invalid geometry), fallback to centroid or closest point
                 try {
-                    const distance = turf.distance(userPoint, turf.nearestPoint(userPoint, feature));
+                    const centroid = turf.centroid(feature);
+                    const distance = turf.distance(userPoint, centroid);
                     if (distance < minDistance) {
                         minDistance = distance;
+                        nearestCoord = centroid.geometry.coordinates;
                     }
                 } catch (e2) { }
             }
         }
     });
 
-    return minDistance === Infinity ? null : minDistance;
+    return {
+        distance: minDistance === Infinity ? null : minDistance,
+        nearest: nearestCoord ? { lng: nearestCoord[0], lat: nearestCoord[1] } : null,
+    };
+}
+
+function findNearestDistance(point, geoJson) {
+    return findNearestDistanceWithPoint(point, geoJson).distance;
 }
 
 // Determine which region the user is in
@@ -169,7 +185,9 @@ app.get('/api/proximity', async (req, res) => {
         getHistoryGeoJson(24)
     ]);
 
-    const currentDistance = findNearestDistance(userLatLng, latestGeoJson);
+    const currentResult = findNearestDistanceWithPoint(userLatLng, latestGeoJson);
+    const currentDistance = currentResult.distance;
+    const nearestFrontlinePoint = currentResult.nearest;
     const historyDistance = findNearestDistance(userLatLng, historyGeoJson);
 
     let change = null;
@@ -179,6 +197,8 @@ app.get('/api/proximity', async (req, res) => {
 
     res.json({
         currentDistanceKm: currentDistance,
+        nearestFrontlinePoint,
+        change7dKm: change,
         change24hKm: change,
         region: region,
         timestamp: new Date().toISOString()
