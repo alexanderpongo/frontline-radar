@@ -223,7 +223,7 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
             {/* Main number block */}
             <div className="story-center">
               <div className="story-label-sm">
-                {isUa ? 'від мене до лінії фронту' : 'from me to the frontline'}
+                {isUa ? 'моя відстань до лінії фронту' : 'my distance to the frontline'}
               </div>
               <div className="story-distance-row">
                 <span className="story-distance">{isUa ? distNum : distNumEn}</span>
