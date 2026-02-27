@@ -1433,14 +1433,23 @@ body {
   white-space: nowrap;
 }
 
+/* Vertical stack layout: number on top, unit below */
+.story-number-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
+}
+
 .story-distance {
   font-family: 'Outfit', sans-serif;
-  font-size: 2.8rem;
+  font-size: 3.4rem;
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 1;
   color: #ff4444;
-  text-shadow: 0 0 40px rgba(255, 60, 60, 0.5);
+  text-shadow: 0 0 40px rgba(255, 60, 60, 0.55), 0 0 80px rgba(255, 60, 60, 0.25);
   white-space: nowrap;
 }
 
@@ -1452,6 +1461,18 @@ body {
   color: rgba(255, 68, 68, 0.6);
   white-space: nowrap;
   text-transform: uppercase;
+}
+
+/* Unit on its own line below the number */
+.story-unit-block {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #ff4444;
+  text-shadow: 0 0 30px rgba(255, 60, 60, 0.4);
+  text-transform: uppercase;
+  margin-top: -0.1em;
 }
 
 .story-region {
@@ -1519,7 +1540,8 @@ body {
   font-weight: 500;
   line-height: 1.5;
   letter-spacing: 0.01em;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
 }
 
 .story-cta-1 {

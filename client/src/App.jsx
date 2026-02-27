@@ -211,11 +211,11 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
             {/* Main number block */}
             <div className="story-center">
               <div className="story-label-sm">
-                {isUa ? 'моя відстань до лінії фронту' : 'my distance to the frontline'}
+                {isUa ? 'відстань до фронту від мене' : 'my distance to the frontline'}
               </div>
-              <div className="story-distance-row">
+              <div className="story-number-stack">
                 <span className="story-distance">{isUa ? distNum : distNumEn}</span>
-                <span className="story-unit">{isUa ? 'км' : 'km'}</span>
+                <span className="story-unit-block">{isUa ? 'КМ' : 'KM'}</span>
               </div>
               {regionText && (
                 <div className="story-region">
@@ -225,95 +225,16 @@ function ShareStoryCard({ distanceKm, directionInfo, frontLat, frontLng, userLat
               )}
             </div>
 
-            {/* Mini map */}
-            <div className="story-minimap">
-              {(() => {
-                // Ukraine bbox: lng 22–42, lat 44–53 → SVG 200×110
-                const W = 200, H = 110;
-                function proj(lat, lng) {
-                  return [
-                    Math.round(((lng - 22) / 20) * W),
-                    Math.round(H - ((lat - 44) / 9) * H)
-                  ];
-                }
-
-                // Accurate-ish Ukraine outline (clockwise from NW)
-                const uaBorder = [
-                  [51.8, 24.0], [51.5, 27.0], [51.5, 30.5], [52.2, 32.0],
-                  [52.3, 34.0], [50.3, 36.0], [49.0, 38.0], [48.2, 39.5],
-                  [47.0, 38.5], [46.5, 37.5], [46.0, 35.5], [46.2, 33.5],
-                  [46.5, 32.0], [46.0, 31.0], [45.5, 29.5], [45.5, 28.5],
-                  [45.7, 27.0], [47.5, 25.5], [48.0, 24.5], [48.6, 22.3],
-                ].map(([la, lo]) => proj(la, lo).join(',')).join(' ');
-
-                // Frontline — rough eastern line (N→S through Kharkiv, Izyum, Donetsk, Zaporizhzhia, Kherson)
-                const frontline = [
-                  [50.0, 36.3], [49.3, 37.5], [48.5, 38.0],
-                  [48.0, 37.8], [47.5, 37.2], [47.0, 37.6],
-                  [46.8, 36.5], [46.5, 35.6],
-                ].map(([la, lo]) => proj(la, lo).join(',')).join(' ');
-
-                // Front marker: midpoint of frontline
-                const frontPtSvg = frontLat && frontLng ? proj(frontLat, frontLng) : proj(48.0, 37.5);
-
-                // User dot: only show if within Ukraine bbox
-                const userInBbox = userLat >= 44 && userLat <= 53 && userLng >= 22 && userLng <= 42;
-                const userPtSvg = userInBbox ? proj(userLat, userLng) : null;
-
-                return (
-                  <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} xmlns="http://www.w3.org/2000/svg">
-                    {/* Ukraine fill */}
-                    <polygon
-                      points={uaBorder}
-                      fill="rgba(30,60,110,0.22)"
-                      stroke="rgba(100,160,255,0.2)"
-                      strokeWidth="0.8"
-                      strokeLinejoin="round"
-                    />
-                    {/* Frontline polyline */}
-                    <polyline
-                      points={frontline}
-                      fill="none"
-                      stroke="rgba(255,60,60,0.55)"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeDasharray="3 2"
-                    />
-                    {/* Frontline nearest point */}
-                    <circle cx={frontPtSvg[0]} cy={frontPtSvg[1]} r="4.5" fill="rgba(255,40,40,0.12)" />
-                    <circle cx={frontPtSvg[0]} cy={frontPtSvg[1]} r="2" fill="#ff4444" />
-                    {/* User dot — only if inside Ukraine */}
-                    {userPtSvg && (
-                      <>
-                        <circle cx={userPtSvg[0]} cy={userPtSvg[1]} r="4" fill="rgba(74,222,128,0.15)" />
-                        <circle cx={userPtSvg[0]} cy={userPtSvg[1]} r="2" fill="#4ade80" />
-                        {/* Dashed line to frontline */}
-                        <line
-                          x1={userPtSvg[0]} y1={userPtSvg[1]}
-                          x2={frontPtSvg[0]} y2={frontPtSvg[1]}
-                          stroke="rgba(255,68,68,0.4)" strokeWidth="0.8" strokeDasharray="4 3"
-                        />
-                      </>
-                    )}
-                  </svg>
-                );
-              })()}
-              <div className="story-minimap-label">
-                {isUa
-                  ? (userLat >= 44 && userLat <= 53 && userLng >= 22 && userLng <= 42
-                    ? '● ВИ   — — ✕ ФРОНТ' : '— — ✕ ФРОНТ')
-                  : (userLat >= 44 && userLat <= 53 && userLng >= 22 && userLng <= 42
-                    ? '● YOU   — — ✕ FRONT' : '— — ✕ FRONT')}
+            {/* CTA lines */}
+            <div className="story-cta">
+              <div className="story-cta-line story-cta-1">
+                {isUa ? "Пам'ятайте — ця відстань може зменшитись." : 'Remember — this distance could shrink.'}
+              </div>
+              <div className="story-cta-line story-cta-2">
+                {isUa ? 'Підтримайте Україну, поки вона тримає лінію.' : 'Support Ukraine while it holds the line.'}
               </div>
             </div>
 
-
-            {/* CTA lines */}
-            <div className="story-cta">
-              <div className="story-cta-line story-cta-1">{cta[0]}</div>
-              <div className="story-cta-line story-cta-2">{cta[1]}</div>
-            </div>
 
             {/* Bottom */}
             <div className="story-bottom">
