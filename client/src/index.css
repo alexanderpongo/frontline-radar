@@ -1325,37 +1325,52 @@ body {
 .story-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(16px);
-  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(20px);
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
   animation: fadeIn 0.25s ease;
+}
+
+@media (max-width: 600px) {
+  .story-overlay {
+    align-items: flex-start;
+  }
 }
 
 .story-modal {
   position: relative;
   background: #0a0a12;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
-  padding: 1.5rem 1.5rem 1.25rem;
+  padding: 1.25rem 1.25rem 1.5rem;
   width: 100%;
   max-width: 400px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.5rem;
   animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: 96vh;
-  overflow-y: auto;
+  max-height: max-content;
+  margin: auto 0;
+}
+
+@media (max-width: 600px) {
+  .story-modal {
+    padding: 1.25rem 1rem;
+    gap: 0.4rem;
+    border-radius: var(--radius-lg);
+  }
 }
 
 .story-close {
   position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
+  top: 1rem;
+  right: 1rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.4);
@@ -1409,14 +1424,21 @@ body {
   height: 426px;
   /* 9:16 ratio */
   background: #060610;
-  border-radius: 0;
+  border-radius: 4px;
   overflow: hidden;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1.5rem;
-  box-shadow: none;
+  padding: 1.5rem 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-height: 700px) {
+  .story-card {
+    transform: scale(0.9);
+    margin: -20px 0;
+  }
 }
 
 .story-bg {

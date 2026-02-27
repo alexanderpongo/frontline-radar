@@ -763,18 +763,6 @@ function App() {
           </div>
         </div>
       </div>
-      {showStory && (
-        <ShareStoryCard
-          distanceKm={data?.currentDistanceKm}
-          directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang) : null}
-          frontLat={data?.nearestFrontlinePoint?.lat}
-          frontLng={data?.nearestFrontlinePoint?.lng}
-          userLat={location?.lat}
-          userLng={location?.lng}
-          lang={lang}
-          onClose={() => setShowStory(false)}
-        />
-      )}
     </div>
   );
 
@@ -909,18 +897,6 @@ function App() {
           <p className="share-hint">{isEn ? 'Share your distance to the frontline — this matters' : 'Розкажіть про відстань до фронту — про це важливо пам\'ятати'}</p>
         </div>
 
-        {showStory && (
-          <ShareStoryCard
-            distanceKm={data?.currentDistanceKm}
-            directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang) : null}
-            frontLat={data?.nearestFrontlinePoint?.lat}
-            frontLng={data?.nearestFrontlinePoint?.lng}
-            userLat={location?.lat}
-            userLng={location?.lng}
-            lang={lang}
-            onClose={() => setShowStory(false)}
-          />
-        )}
       </div>
     );
   };
@@ -1038,6 +1014,19 @@ function App() {
             </div>
           </div>
         </footer>
+
+        {showStory && (
+          <ShareStoryCard
+            distanceKm={data?.currentDistanceKm}
+            directionInfo={data?.nearestFrontlinePoint && location ? getDirection(location.lat, location.lng, data.nearestFrontlinePoint.lat, data.nearestFrontlinePoint.lng, lang) : null}
+            frontLat={data?.nearestFrontlinePoint?.lat}
+            frontLng={data?.nearestFrontlinePoint?.lng}
+            userLat={location?.lat}
+            userLng={location?.lng}
+            lang={lang}
+            onClose={() => setShowStory(false)}
+          />
+        )}
 
       </div>
     </div>
