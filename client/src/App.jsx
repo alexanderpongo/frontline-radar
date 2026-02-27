@@ -763,6 +763,7 @@ function App() {
           </div>
         </div>
       </div>
+      {renderWarCrimesCard()}
     </div>
   );
 
