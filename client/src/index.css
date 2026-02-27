@@ -1164,14 +1164,14 @@ body {
 
 /* ––– Share Story Button ––– */
 .share-story-btn {
-  background: linear-gradient(135deg, rgba(131,58,180,0.25) 0%, rgba(253,29,29,0.2) 50%, rgba(252,176,69,0.2) 100%) !important;
-  border: 1px solid rgba(200,80,200,0.25) !important;
-  color: rgba(255,200,255,0.9) !important;
+  background: linear-gradient(135deg, rgba(131, 58, 180, 0.25) 0%, rgba(253, 29, 29, 0.2) 50%, rgba(252, 176, 69, 0.2) 100%) !important;
+  border: 1px solid rgba(200, 80, 200, 0.25) !important;
+  color: rgba(255, 200, 255, 0.9) !important;
 }
 
 .share-story-btn:hover {
   filter: brightness(1.15) !important;
-  border-color: rgba(200,80,200,0.45) !important;
+  border-color: rgba(200, 80, 200, 0.45) !important;
 }
 
 /* ––– Share Section (Ukraine dashboard) ––– */
@@ -1181,8 +1181,8 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 2.5rem 2rem;
-  background: linear-gradient(135deg, rgba(131,58,180,0.08) 0%, rgba(253,29,29,0.06) 100%);
-  border: 1px solid rgba(180,60,180,0.15);
+  background: linear-gradient(135deg, rgba(131, 58, 180, 0.08) 0%, rgba(253, 29, 29, 0.06) 100%);
+  border: 1px solid rgba(180, 60, 180, 0.15);
   border-radius: var(--radius-xl);
   text-align: center;
 }
@@ -1203,12 +1203,12 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.3s, filter 0.2s;
-  box-shadow: 0 6px 32px rgba(131,58,180,0.25), 0 2px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 6px 32px rgba(131, 58, 180, 0.25), 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 .share-main-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 40px rgba(131,58,180,0.4), 0 4px 16px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 40px rgba(131, 58, 180, 0.4), 0 4px 16px rgba(0, 0, 0, 0.4);
   filter: brightness(1.08);
 }
 
@@ -1218,7 +1218,7 @@ body {
 
 .share-hint {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   font-weight: 300;
   max-width: 360px;
 }
@@ -1227,7 +1227,7 @@ body {
 .story-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(16px);
   z-index: 9999;
   display: flex;
@@ -1240,7 +1240,7 @@ body {
 .story-modal {
   position: relative;
   background: #0a0a12;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   padding: 2.5rem 2rem;
   width: 100%;
@@ -1258,9 +1258,9 @@ body {
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.4);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   width: 32px;
   height: 32px;
@@ -1273,9 +1273,9 @@ body {
 }
 
 .story-close:hover {
-  background: rgba(255,68,68,0.12);
-  color: rgba(255,100,100,0.9);
-  border-color: rgba(255,68,68,0.2);
+  background: rgba(255, 68, 68, 0.12);
+  color: rgba(255, 100, 100, 0.9);
+  border-color: rgba(255, 68, 68, 0.2);
 }
 
 .story-modal-title {
@@ -1284,14 +1284,14 @@ body {
   text-transform: uppercase;
   font-style: italic;
   letter-spacing: 0.05em;
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 0;
   text-align: center;
 }
 
 .story-modal-hint {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   text-align: center;
   font-weight: 300;
 }
@@ -1306,24 +1306,25 @@ body {
 .story-card {
   position: relative;
   width: 240px;
-  height: 426px; /* 9:16 ratio */
+  height: 426px;
+  /* 9:16 ratio */
   background: #060610;
   border-radius: 24px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 2rem 1.5rem;
-  box-shadow: 0 12px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+  box-shadow: 0 12px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .story-bg {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 120% 60% at 50% 0%, rgba(30,30,80,0.9) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(100,10,10,0.5) 0%, transparent 70%),
+    radial-gradient(ellipse 120% 60% at 50% 0%, rgba(30, 30, 80, 0.9) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(100, 10, 10, 0.5) 0%, transparent 70%),
     #060610;
   z-index: 0;
 }
@@ -1336,7 +1337,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.35em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   margin-bottom: auto;
   margin-top: 0.25rem;
 }
@@ -1358,18 +1359,36 @@ body {
   font-weight: 700;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.25);
+  color: rgba(255, 255, 255, 0.25);
   margin-bottom: 0.25rem;
+}
+
+.story-distance-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .story-distance {
   font-family: 'Outfit', sans-serif;
-  font-size: 3.2rem;
+  font-size: 2.8rem;
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 1;
   color: #ff4444;
-  text-shadow: 0 0 40px rgba(255,60,60,0.5);
+  text-shadow: 0 0 40px rgba(255, 60, 60, 0.5);
+  white-space: nowrap;
+}
+
+.story-unit {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: rgba(255, 68, 68, 0.6);
+  white-space: nowrap;
+  text-transform: uppercase;
 }
 
 .story-region {
@@ -1381,8 +1400,9 @@ body {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   margin-top: 0.25rem;
+  white-space: nowrap;
 }
 
 .story-arrow {
@@ -1402,18 +1422,19 @@ body {
 
 .story-cta-line {
   font-family: 'Outfit', sans-serif;
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 1.6;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .story-cta-1 {
-  color: rgba(255,255,255,0.55);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .story-cta-2 {
-  color: rgba(255,200,100,0.8);
+  color: rgba(255, 200, 100, 0.8);
   font-weight: 600;
 }
 
@@ -1433,13 +1454,13 @@ body {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .story-source {
   font-family: 'JetBrains Mono', monospace;
   font-size: 7px;
-  color: rgba(255,255,255,0.2);
+  color: rgba(255, 255, 255, 0.2);
   letter-spacing: 0.15em;
 }
 
@@ -1447,14 +1468,36 @@ body {
 .story-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(255,68,68,0.07);
+  border: 1px solid rgba(255, 68, 68, 0.07);
   z-index: 1;
   pointer-events: none;
 }
 
-.story-ring-1 { width: 280px; height: 280px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
-.story-ring-2 { width: 200px; height: 200px; top: 50%; left: 50%; transform: translate(-50%,-50%); border-color: rgba(255,68,68,0.05); }
-.story-ring-3 { width: 130px; height: 130px; top: 50%; left: 50%; transform: translate(-50%,-50%); border-color: rgba(255,68,68,0.04); }
+.story-ring-1 {
+  width: 280px;
+  height: 280px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.story-ring-2 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-color: rgba(255, 68, 68, 0.05);
+}
+
+.story-ring-3 {
+  width: 130px;
+  height: 130px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-color: rgba(255, 68, 68, 0.04);
+}
 
 /* ––– Download button in story modal ––– */
 .story-download-btn {
@@ -1475,7 +1518,7 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   transition: filter 0.2s, transform 0.2s;
-  box-shadow: 0 4px 24px rgba(131,58,180,0.3);
+  box-shadow: 0 4px 24px rgba(131, 58, 180, 0.3);
 }
 
 .story-download-btn:hover {
@@ -1490,7 +1533,7 @@ body {
 
 .story-tip {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.25);
+  color: rgba(255, 255, 255, 0.25);
   text-align: center;
   line-height: 1.6;
   font-weight: 300;

@@ -155,9 +155,9 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
 
-  const distText = distanceKm ? `${Math.round(distanceKm).toLocaleString('uk-UA')} км` : '—';
-  const distTextEn = distanceKm ? `${Math.round(distanceKm).toLocaleString()} km` : '—';
-  const regionText = directionInfo?.region || '';
+  const distNum = distanceKm ? Math.round(distanceKm).toLocaleString('uk-UA') : '—';
+  const distNumEn = distanceKm ? Math.round(distanceKm).toLocaleString() : '—';
+  const regionText = (directionInfo?.region || '').replace(' напрям', '').replace(' direction', '');
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
@@ -184,15 +184,10 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
 
   // Choose language
   const isUa = !isAbroad;
-  const headline = isUa
-    ? `${distText} від мене до лінії фронту`
-    : `${distTextEn} from me to the frontline`;
-  const subText = isUa
-    ? (regionText ? `Напрям: ${regionText}` : 'Дані: DeepStateUA')
-    : (regionText ? `Direction: ${regionText}` : 'Source: DeepStateUA');
+  // Two short CTA lines that each fit on one line in the narrow card
   const cta = isUa
-    ? ['Пам\'ятайте — ця відстань може зменшитись.', 'Підтримайте Україну, поки вона тримає лінію.']
-    : ['This distance might shrink.', 'Support Ukraine while it holds the line.'];
+    ? ['Ця відстань може скоротитись.', 'Підтримайте Україну — зупиніть фронт.']
+    : ['This distance could shrink.', 'Support Ukraine — stop the frontline.'];
   const siteLine = 'frontline-radar.vercel.app';
 
   return (
@@ -220,9 +215,13 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
             {/* Main number block */}
             <div className="story-center">
               <div className="story-label-sm">
-                {isUa ? 'відстань до фронту від мене' : 'distance to the frontline from me'}
+                {isUa ? 'від мене до лінії фронту' : 'from me to the frontline'}
               </div>
-              <div className="story-distance">{isUa ? distText : distTextEn}</div>
+              {/* Number + unit always on one line */}
+              <div className="story-distance-row">
+                <span className="story-distance">{isUa ? distNum : distNumEn}</span>
+                <span className="story-unit">{isUa ? 'км' : 'km'}</span>
+              </div>
               {regionText && (
                 <div className="story-region">
                   <span className="story-arrow">{directionInfo?.symbol || '→'}</span>
@@ -262,8 +261,8 @@ function ShareStoryCard({ distanceKm, directionInfo, isAbroad, onClose }) {
         </button>
         <p className="story-tip">
           {isUa
-            ? '📲 Завантажте → відкрийте Instagram → Stories → додайте із галереї'
-            : '📲 Download → open Instagram → Stories → add from gallery'}
+            ? '📲 Збережіть → Instagram → Stories → Галерея'
+            : '📲 Save → Instagram → Stories → Gallery'}
         </p>
       </div>
     </div>
