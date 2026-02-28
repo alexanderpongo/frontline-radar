@@ -389,6 +389,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showStory, setShowStory] = useState(false);
+  const [hasManuallyChangedLang, setHasManuallyChangedLang] = useState(false);
   const isDevHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
   // lang: auto-detect on first render, then user can override
@@ -430,8 +431,15 @@ function App() {
       const response = await fetch(`${API_BASE}/api/proximity?lat=${lat}&lng=${lng}`);
       const result = await response.json();
       setData(result);
-      // Auto-set language based on server region if not yet manually changed
-      // But don't overwrite if URL explicitly set a test region or language
+
+      // Auto-set language based on detected region IF user hasn't toggled yet
+      if (!hasManuallyChangedLang && result?.region) {
+        if (result.region === 'abroad' || result.region === 'europe') {
+          setLang('en');
+        } else {
+          setLang('uk');
+        }
+      }
     } catch (err) {
       setError(isEn ? 'Failed to fetch data from server.' : 'Не вдалося отримати дані від сервера.');
     } finally {
@@ -927,7 +935,10 @@ function App() {
           <div className="lang-toggle-wrap">
             <button
               className="lang-toggle-center"
-              onClick={() => setLang(l => l === 'uk' ? 'en' : 'uk')}
+              onClick={() => {
+                setHasManuallyChangedLang(true);
+                setLang(l => l === 'uk' ? 'en' : 'uk');
+              }}
               title={isEn ? 'Switch to Ukrainian' : 'Switch to English'}
             >
               <span className={lang === 'uk' ? 'lang-btn-active' : 'lang-btn'}>UA</span>
