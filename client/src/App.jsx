@@ -523,26 +523,20 @@ function App() {
         body: 'Каждый метр освобождённой земли пропитан доказательствами преступлений, которые не имеют срока давности. Мир должен видеть правду.',
         btn: 'Доказательства военных преступлений'
       },
-      abroad: {
-        title: 'The Price of Every Kilometer',
-        body: 'Every meter of liberated land is soaked with evidence of crimes that have no statute of limitations. The world must see the truth.',
-        btn: 'Evidence of War Crimes'
-      },
-      ukraine_uk: {
+      uk: {
         title: 'Ціна кілометрів',
         body: 'Кожен метр звільненої землі та кожен кілометр відстані просякнутий доказами злочинів, які не мають терміну давності. Світ повинен бачити правду.',
         btn: 'Докази воєнних злочинів'
       },
-      ukraine_en: {
+      en: {
         title: 'The Price of Kilometers',
         body: 'Every meter of liberated land and every kilometer of distance is soaked with evidence of crimes that have no statute of limitations. The world must see the truth.',
         btn: 'Evidence of War Crimes'
-      },
+      }
     };
     let key;
     if (isEnemy) key = 'russia';
-    else if (isAbroad) key = 'abroad';
-    else key = isEn ? 'ukraine_en' : 'ukraine_uk';
+    else key = isEn ? 'en' : 'uk';
     const t = texts[key];
     return (
       <div className="context-card warcrimes-card">
