@@ -394,12 +394,22 @@ function App() {
 
   // lang: auto-detect on first render, then user can override
   const defaultLang = () => {
+    // 1. Manual check for dev testing
     if (isDevHost) {
       const params = new URLSearchParams(window.location.search);
       const r = params.get('testRegion') || '';
       if (r === 'abroad' || r === 'europe') return 'en';
     }
-    return 'uk'; // Default to UA for prod unless user toggles
+
+    // 2. Browser language hint
+    try {
+      const userLangs = (navigator.languages || [navigator.language]).map(l => l.toLowerCase());
+      const isPostSoviet = userLangs.some(l => l.startsWith('uk') || l.startsWith('ru') || l.startsWith('be'));
+      if (isPostSoviet) return 'uk';
+    } catch (e) { }
+
+    // 3. Default to EN for international audience
+    return 'en';
   };
   const [lang, setLang] = useState(defaultLang);
   const isEn = lang === 'en';
